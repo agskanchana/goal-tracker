@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="screen active">
+            <div class="login-container">
+                <div class="login-card">
+                    <h1><i class="fas fa-project-diagram"></i> Project Management System</h1>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </form>
+                    <div id="loginError" class="error-message"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard -->
+        <div id="dashboard" class="screen">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-content">
+                    <h1><i class="fas fa-project-diagram"></i> Project Management</h1>
+                    <div class="header-actions">
+                        <span id="userInfo" class="user-info"></span>
+                        <button id="logoutBtn" class="btn btn-secondary">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Navigation -->
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-tab="projects">
+                    <i class="fas fa-tasks"></i> Projects
+                </button>
+                <button class="nav-tab" data-tab="users" id="usersNavTab">
+                    <i class="fas fa-users"></i> Users
+                </button>
+                <button class="nav-tab" data-tab="leaves" id="leavesNavTab">
+                    <i class="fas fa-calendar-times"></i> Leaves
+                </button>
+            </nav>
+
+            <!-- Projects Tab -->
+            <div id="projectsTab" class="tab-content active">
+                <div class="tab-header">
+                    <h2>Projects Management</h2>
+                    <button id="addProjectBtn" class="btn btn-primary manager-only">
+                        <i class="fas fa-plus"></i> Add Project
+                    </button>
+                </div>
+
+                <div class="filters">
+                    <select id="statusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="WP conversion">WP Conversion</option>
+                        <option value="WP conversion Review">WP Conversion Review</option>
+                        <option value="Page creation">Page Creation</option>
+                        <option value="Page creation QA">Page Creation QA</option>
+                        <option value="Golive QA">Golive QA</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                    <input type="text" id="searchProject" placeholder="Search projects...">
+                </div>
+
+                <div id="projectsGrid" class="projects-grid">
+                    <!-- Projects will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div id="usersTab" class="tab-content">
+                <div class="tab-header">
+                    <h2>Users Management</h2>
+                    <button id="addUserBtn" class="btn btn-primary manager-only">
+                        <i class="fas fa-plus"></i> Add User
+                    </button>
+                </div>
+
+                <div id="usersList" class="users-grid">
+                    <!-- Users will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Leaves Tab -->
+            <div id="leavesTab" class="tab-content">
+                <div class="tab-header">
+                    <h2>Leave Management</h2>
+                    <button id="addLeaveBtn" class="btn btn-primary manager-only">
+                        <i class="fas fa-plus"></i> Add Leave
+                    </button>
+                </div>
+
+                <div id="leavesList" class="leaves-container">
+                    <!-- Leaves will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Modal -->
+        <div id="projectModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="projectModalTitle">Add Project</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="projectForm">
+                        <div class="form-section">
+                            <h4>Basic Information</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="projectName">Project Name *</label>
+                                    <input type="text" id="projectName" name="project_name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="ticketLink">Ticket Link *</label>
+                                    <input type="url" id="ticketLink" name="ticket_link" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="designApprovedDate">Design Approved Date *</label>
+                                    <input type="date" id="designApprovedDate" name="design_approved_date" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="assignedWebmaster">Assigned Webmaster *</label>
+                                    <select id="assignedWebmaster" name="assigned_webmaster" required>
+                                        <option value="">Select Webmaster</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="webmasterAssignedDate">Webmaster Assigned Date *</label>
+                                    <input type="date" id="webmasterAssignedDate" name="webmaster_assigned_date" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="targetDate">Target Date (WP Conversion)</label>
+                                    <input type="date" id="targetDate" name="target_date">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="projectStatus">Project Status</label>
+                                    <select id="projectStatus" name="project_status">
+                                        <option value="WP conversion">WP Conversion</option>
+                                        <option value="WP conversion Review">WP Conversion Review</option>
+                                        <option value="Page creation">Page Creation</option>
+                                        <option value="Page creation QA">Page Creation QA</option>
+                                        <option value="Golive QA">Golive QA</option>
+                                        <option value="Completed">Completed</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="signedUpDate">Signed Up Date</label>
+                                    <input type="date" id="signedUpDate" name="signed_up_date">
+                                </div>
+                                <div class="form-group">
+                                    <label for="contractStartDate">Contract Start Date</label>
+                                    <input type="date" id="contractStartDate" name="contract_start_date">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4>WP Conversion Tracking</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="managerSentBack" name="manager_sent_back">
+                                        Manager sent back WP conversion due to errors
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="dateSentToWpQa">Date sent to WP conversion QA</label>
+                                    <input type="date" id="dateSentToWpQa" name="date_sent_to_wp_qa">
+                                </div>
+                                <div class="form-group">
+                                    <label for="dateFinishedWpQa">Date finished WP conversion QA</label>
+                                    <input type="date" id="dateFinishedWpQa" name="date_finished_wp_qa">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="dateFinishedWpBugs">Date finished WP conversion bugs</label>
+                                    <input type="date" id="dateFinishedWpBugs" name="date_finished_wp_bugs">
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="wpReopenedBugs" name="wp_reopened_bugs">
+                                        Are there reopened bugs?
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4>Page Creation Tracking</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="dateSentToPageQa">Date sent to page creation QA</label>
+                                    <input type="date" id="dateSentToPageQa" name="date_sent_to_page_qa">
+                                </div>
+                                <div class="form-group">
+                                    <label for="dateFinishedPageQa">Date finished page creation QA</label>
+                                    <input type="date" id="dateFinishedPageQa" name="date_finished_page_qa">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="dateFinishedPageBugs">Date finished page creation bugs</label>
+                                    <input type="date" id="dateFinishedPageBugs" name="date_finished_page_bugs">
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="pageReopenedBugs" name="page_reopened_bugs">
+                                        Are there reopened bugs?
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4>Go Live Tracking</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="dnsChangedDate">Date DNS changed</label>
+                                    <input type="date" id="dnsChangedDate" name="dns_changed_date">
+                                </div>
+                                <div class="form-group">
+                                    <label for="dateSentToGoliveQa">Date sent to Golive QA</label>
+                                    <input type="date" id="dateSentToGoliveQa" name="date_sent_to_golive_qa">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="dateFinishedGoliveQa">Date finished Golive QA</label>
+                                    <input type="date" id="dateFinishedGoliveQa" name="date_finished_golive_qa">
+                                </div>
+                                <div class="form-group">
+                                    <label for="dateFinishedGoliveBugs">Date finished Golive bugs</label>
+                                    <input type="date" id="dateFinishedGoliveBugs" name="date_finished_golive_bugs">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="goliveReopenedBugs" name="golive_reopened_bugs">
+                                        Are there reopened bugs?
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4>Quality Checks</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="issuesAfter8Hours" name="issues_after_8_hours">
+                                        Issues 8th Hour after DNS changed
+                                    </label>
+                                    <div id="issues8HoursContainer" class="issues-container" style="display: none;">
+                                        <textarea id="issues8HoursText" name="issues_8_hours_text" placeholder="Describe the issues found after 8 hours..." rows="3"></textarea>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="issuesAfter10Days" name="issues_after_10_days">
+                                        Issues 10th working day after DNS changed
+                                    </label>
+                                    <div id="issues10DaysContainer" class="issues-container" style="display: none;">
+                                        <textarea id="issues10DaysText" name="issues_10_days_text" placeholder="Describe the issues found after 10 days..." rows="3"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tasks Section -->
+                        <div class="form-section">
+                            <h4>Project Tasks</h4>
+                            <div class="tasks-container">
+                                <div class="tasks-header">
+                                    <button type="button" id="addTaskBtn" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-plus"></i> Add Task
+                                    </button>
+                                </div>
+                                <div id="tasksList" class="tasks-list">
+                                    <!-- Tasks will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="button" id="cancelProject" class="btn btn-secondary">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Project</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Modal -->
+        <div id="userModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="userModalTitle">Add User</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <div class="form-group">
+                            <label for="userName">Name *</label>
+                            <input type="text" id="userName" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="userEmail">Email *</label>
+                            <input type="email" id="userEmail" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="userRole">Role *</label>
+                            <select id="userRole" name="role" required>
+                                <option value="">Select Role</option>
+                                <option value="manager">Manager</option>
+                                <option value="webmaster_level_1">Webmaster Level 1</option>
+                                <option value="webmaster_level_2">Webmaster Level 2</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="workSchedule">Work Schedule *</label>
+                            <select id="workSchedule" name="work_schedule" required>
+                                <option value="">Select Schedule</option>
+                                <option value="US">US</option>
+                                <option value="SL">SL</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="userPassword">Password *</label>
+                            <input type="password" id="userPassword" name="password" required>
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="button" id="cancelUser" class="btn btn-secondary">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save User</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leave Modal -->
+        <div id="leaveModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Add Leave</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="leaveForm">
+                        <div class="form-group">
+                            <label for="leaveUser">User *</label>
+                            <select id="leaveUser" name="user_id" required>
+                                <option value="">Select User</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="leaveStartDate">Start Date *</label>
+                            <input type="date" id="leaveStartDate" name="start_date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="leaveEndDate">End Date *</label>
+                            <input type="date" id="leaveEndDate" name="end_date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="leaveReason">Reason</label>
+                            <textarea id="leaveReason" name="reason" rows="3"></textarea>
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="button" id="cancelLeave" class="btn btn-secondary">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Leave</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Modal -->
+        <div id="taskModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="taskModalTitle">Add Task</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="taskForm">
+                        <div class="form-group">
+                            <label for="taskName">Task Name *</label>
+                            <input type="text" id="taskName" name="task_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskDescription">Description</label>
+                            <textarea id="taskDescription" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskSentDate">Sent Date</label>
+                            <input type="date" id="taskSentDate" name="sent_date">
+                        </div>
+                        <div class="form-group">
+                            <label for="ticketUpdatedDate">Ticket Updated Date</label>
+                            <input type="date" id="ticketUpdatedDate" name="ticket_updated_date">
+                        </div>
+                        <div class="form-group">
+                            <label for="taskCompletedDate">Completed Date</label>
+                            <input type="date" id="taskCompletedDate" name="completed_date">
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="button" id="cancelTask" class="btn btn-secondary">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Task</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+</body>
+</html>
