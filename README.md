@@ -1,6 +1,6 @@
-# Project Management System
+# Kickoff Goal / Target Tracker
 
-A comprehensive project management system built with HTML, CSS, JavaScript, and Supabase for managing web development projects with detailed tracking and user management.
+A comprehensive goal and target tracking system built with HTML, CSS, JavaScript, and Supabase for managing web development projects with detailed tracking and user management.
 
 ## Features
 
