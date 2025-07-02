@@ -711,85 +711,137 @@ body {
     }
 }
 
-/* Issues container styles */
-.issues-container {
-    margin-top: 10px;
-    padding: 10px;
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 4px;
+/* Goal Tracking Styles */
+.goals-dashboard {
+    padding: 20px 0;
 }
 
-.issues-container textarea {
-    width: 100%;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    padding: 8px;
-    font-family: inherit;
+.goal-user-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.goal-user-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+}
+
+.goal-user-header h3 {
+    margin: 0 0 10px 0;
+    font-size: 20px;
+}
+
+.goal-schedule-info {
+    display: flex;
+    gap: 20px;
     font-size: 14px;
-    resize: vertical;
+    opacity: 0.9;
 }
 
-.issues-container textarea:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+.goals-container {
+    padding: 20px;
 }
 
-/* Responsive Design */
+.goal-section {
+    margin-bottom: 30px;
+}
+
+.goal-section h4 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 18px;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 5px;
+}
+
+.goal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.goal-card {
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-left: 4px solid;
+    transition: transform 0.2s ease;
+}
+
+.goal-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.goal-card.achieved {
+    background: #f8fff8;
+    border-left-color: #28a745;
+}
+
+.goal-card.not-achieved {
+    background: #fff8f8;
+    border-left-color: #dc3545;
+}
+
+.goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.goal-title {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.goal-status {
+    font-size: 18px;
+}
+
+.goal-details {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.goal-percentage {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    min-width: 60px;
+}
+
+.goal-description {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* Responsive goal styles */
 @media (max-width: 768px) {
-    .header-content {
-        padding: 15px 20px;
+    .goal-schedule-info {
         flex-direction: column;
-        gap: 15px;
+        gap: 5px;
     }
 
-    .nav-tabs {
-        padding: 0 20px;
-        overflow-x: auto;
-        white-space: nowrap;
+    .goal-grid {
+        grid-template-columns: 1fr;
     }
 
-    .tab-content {
-        padding: 20px;
-    }
-
-    .tab-header {
+    .goal-details {
         flex-direction: column;
         align-items: flex-start;
-        gap: 15px;
+        gap: 5px;
     }
 
-    .form-row {
-        grid-template-columns: 1fr;
-        gap: 0;
-    }
-
-    .filters {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .projects-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .users-list {
-        grid-template-columns: 1fr;
-    }
-
-    .modal-content {
-        margin: 10px;
-        max-width: none;
-    }
-
-    .modal form {
-        padding: 20px;
-    }
-
-    .project-actions,
-    .user-actions {
-        flex-direction: column;
+    .goal-percentage {
+        min-width: auto;
     }
 }
 
@@ -853,4 +905,175 @@ body.role-webmaster_level_2 .manager-only {
 body.role-webmaster_level_1 .webmaster-only,
 body.role-webmaster_level_2 .webmaster-only {
     display: block;
+}
+
+/* Holiday Calendar Styles */
+.holiday-year-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.holiday-year-selector label {
+    font-weight: 600;
+    color: #333;
+}
+
+.holiday-year-selector select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    font-size: 14px;
+}
+
+.holiday-calendar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 30px;
+    padding: 20px 0;
+}
+
+.holiday-section {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid #667eea;
+}
+
+.holiday-section.us-holidays {
+    border-left-color: #dc3545;
+}
+
+.holiday-section.sl-holidays {
+    border-left-color: #28a745;
+}
+
+.holiday-section h3 {
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.holiday-section h3 .flag-icon {
+    font-size: 24px;
+}
+
+.holiday-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.holiday-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+    transition: all 0.2s ease;
+}
+
+.holiday-item:hover {
+    background: #e9ecef;
+    transform: translateX(2px);
+}
+
+.holiday-item.us-holiday {
+    border-left-color: #dc3545;
+}
+
+.holiday-item.sl-holiday {
+    border-left-color: #28a745;
+}
+
+.holiday-item.upcoming {
+    background: linear-gradient(135deg, #fff3cd 0%, #fef9e7 100%);
+    border-left-color: #ffc107;
+}
+
+.holiday-item.today {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    border-left-color: #17a2b8;
+    font-weight: 600;
+}
+
+.holiday-name {
+    font-weight: 500;
+    color: #333;
+    flex: 1;
+}
+
+.holiday-date {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+    min-width: 100px;
+    text-align: right;
+}
+
+.holiday-day {
+    font-size: 12px;
+    color: #999;
+    display: block;
+}
+
+.no-holidays {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+    padding: 40px 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+/* User work schedule indicator */
+.user-schedule-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.user-schedule-info .schedule-flag {
+    font-size: 18px;
+    margin-right: 8px;
+}
+
+/* Responsive holiday calendar styles */
+@media (max-width: 768px) {
+    .holiday-calendar {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .holiday-section {
+        padding: 20px;
+    }
+
+    .holiday-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    .holiday-date {
+        min-width: auto;
+        text-align: left;
+    }
+
+    .holiday-year-selector {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
 }

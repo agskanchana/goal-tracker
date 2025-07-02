@@ -50,6 +50,12 @@
                 <button class="nav-tab active" data-tab="projects">
                     <i class="fas fa-tasks"></i> Projects
                 </button>
+                <button class="nav-tab" data-tab="goals">
+                    <i class="fas fa-bullseye"></i> Goals
+                </button>
+                <button class="nav-tab" data-tab="holidays">
+                    <i class="fas fa-calendar-alt"></i> Holiday Calendar
+                </button>
                 <button class="nav-tab" data-tab="users" id="usersNavTab">
                     <i class="fas fa-users"></i> Users
                 </button>
@@ -82,6 +88,39 @@
 
                 <div id="projectsGrid" class="projects-grid">
                     <!-- Projects will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Goals Tab -->
+            <div id="goalsTab" class="tab-content">
+                <div class="tab-header">
+                    <h2>Goal Tracking</h2>
+                    <button id="refreshGoalsBtn" class="btn btn-primary">
+                        <i class="fas fa-sync"></i> Refresh Goals
+                    </button>
+                </div>
+
+                <div id="goalTrackingContent" class="goals-dashboard">
+                    <!-- Goals will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Holiday Calendar Tab -->
+            <div id="holidaysTab" class="tab-content">
+                <div class="tab-header">
+                    <h2>Holiday Calendar</h2>
+                    <div class="holiday-year-selector">
+                        <label for="holidayYear">Year:</label>
+                        <select id="holidayYear">
+                            <option value="2024">2024</option>
+                            <option value="2025" selected>2025</option>
+                            <option value="2026">2026</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="holidayCalendarContent" class="holiday-calendar">
+                    <!-- Holiday calendar will be loaded here -->
                 </div>
             </div>
 

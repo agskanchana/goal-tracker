@@ -25,6 +25,10 @@ let users = [];
 let leaves = [];
 let tasks = []; // Add tasks array
 
+// Holiday data for working day calculations
+let usHolidays = [];
+let slHolidays = [];
+
 // Demo data for when Supabase is not configured
 const demoData = {
     users: [
@@ -58,18 +62,48 @@ const demoData = {
             id: 1,
             project_name: 'Demo Project 1',
             ticket_link: 'https://example.com/ticket/1',
-            design_approved_date: '2025-01-01',
+            design_approved_date: '2025-06-01',
             assigned_webmaster: 2,
-            webmaster_assigned_date: '2025-01-02',
-            target_date: '2025-02-01',
-            project_status: 'WP conversion',
-            signed_up_date: '2024-12-15',
-            contract_start_date: '2025-01-01',
+            webmaster_assigned_date: '2025-06-10',
+            target_date: '2025-06-25',
+            project_status: 'Page creation',
+            signed_up_date: '2025-05-15',
+            contract_start_date: '2025-06-01',
+            manager_sent_back: false,
+            dns_changed_date: '2025-06-30',
+            date_sent_to_wp_qa: '2025-06-24',
+            date_finished_wp_qa: '2025-06-25',
+            date_finished_wp_bugs: '2025-06-26',
+            wp_reopened_bugs: false,
+            date_sent_to_page_qa: '2025-06-27',
+            date_finished_page_qa: '2025-06-28',
+            date_finished_page_bugs: '2025-06-29',
+            page_reopened_bugs: false,
             issues_after_8_hours: false,
             issues_8_hours_text: null,
-            issues_after_10_days: true,
-            issues_10_days_text: 'Some minor styling issues found that need to be addressed',
-            created_at: '2024-12-20'
+            issues_after_10_days: false,
+            issues_10_days_text: null,
+            created_at: '2025-06-10'
+        },
+        {
+            id: 2,
+            project_name: 'Demo Project 2',
+            ticket_link: 'https://example.com/ticket/2',
+            design_approved_date: '2025-06-15',
+            assigned_webmaster: 3,
+            webmaster_assigned_date: '2025-06-20',
+            target_date: '2025-07-10',
+            project_status: 'WP conversion',
+            signed_up_date: '2025-06-01',
+            contract_start_date: '2025-06-15',
+            manager_sent_back: true,
+            date_sent_to_wp_qa: '2025-07-11',
+            wp_reopened_bugs: true,
+            issues_after_8_hours: false,
+            issues_8_hours_text: null,
+            issues_after_10_days: false,
+            issues_10_days_text: null,
+            created_at: '2025-06-20'
         }
     ],
     leaves: [
@@ -86,22 +120,42 @@ const demoData = {
         {
             id: 1,
             project_id: 1,
-            task_name: 'Initial Setup',
-            description: 'Set up the basic project structure and environment',
-            sent_date: '2025-01-01',
-            ticket_updated_date: '2025-01-02',
+            task_name: 'Task 1',
+            description: 'Test task 1',
+            sent_date: '2025-06-30',
+            ticket_updated_date: '2025-07-01',
             completed_date: null,
-            created_at: '2025-01-01'
+            created_at: '2025-06-30'
         },
         {
             id: 2,
             project_id: 1,
-            task_name: 'Design Review',
-            description: 'Review and approve the design mockups',
-            sent_date: '2025-01-03',
-            ticket_updated_date: '2025-01-04',
-            completed_date: '2025-01-05',
-            created_at: '2025-01-03'
+            task_name: 'Task 2',
+            description: 'Test task 2',
+            sent_date: '2025-06-29',
+            ticket_updated_date: '2025-07-01',
+            completed_date: null,
+            created_at: '2025-06-29'
+        },
+        {
+            id: 3,
+            project_id: 1,
+            task_name: 'Task 5',
+            description: 'Test task 5',
+            sent_date: '2025-06-18',
+            ticket_updated_date: null,
+            completed_date: null,
+            created_at: '2025-06-18'
+        },
+        {
+            id: 4,
+            project_id: 1,
+            task_name: 'Task 4',
+            description: 'Test task 4',
+            sent_date: '2025-06-23',
+            ticket_updated_date: null,
+            completed_date: null,
+            created_at: '2025-06-23'
         }
     ]
 };
@@ -114,6 +168,9 @@ document.addEventListener('DOMContentLoaded', function() {
 async function initializeApp() {
     // Setup event listeners
     setupEventListeners();
+
+    // Load holiday data first
+    await loadHolidayData();
 
     // Initialize demo data if Supabase is not configured
     if (!supabase) {
@@ -232,6 +289,18 @@ function setupEventListeners() {
         issues10DaysCheckbox.addEventListener('change', function() {
             toggleIssuesContainer('issues10DaysContainer', this.checked);
         });
+    }
+
+    // Goal tracking event listener
+    const refreshGoalsBtn = document.getElementById('refreshGoalsBtn');
+    if (refreshGoalsBtn) {
+        refreshGoalsBtn.addEventListener('click', renderGoalTrackingTab);
+    }
+
+    // Holiday calendar event listener
+    const holidayYearSelector = document.getElementById('holidayYear');
+    if (holidayYearSelector) {
+        holidayYearSelector.addEventListener('change', renderHolidayCalendar);
     }
 
     // Close modals when clicking outside
@@ -366,6 +435,16 @@ function switchTab(tabName) {
         content.classList.remove('active');
     });
     document.getElementById(`${tabName}Tab`).classList.add('active');
+
+    // Load goals when goals tab is activated
+    if (tabName === 'goals') {
+        renderGoalTrackingTab();
+    }
+
+    // Load holiday calendar when holidays tab is activated
+    if (tabName === 'holidays') {
+        renderHolidayCalendar();
+    }
 }
 
 // Projects Functions
@@ -711,24 +790,44 @@ function viewProject(projectId) {
 let currentProjectId = null;
 let currentEditingTaskId = null;
 
-async function loadTasks(projectId) {
+async function loadTasks(projectId = null) {
     try {
         if (supabase) {
-            const { data, error } = await supabase
-                .from('tasks')
-                .select('*')
-                .eq('project_id', projectId)
-                .order('created_at', { ascending: false });
+            if (projectId) {
+                // Load tasks for specific project
+                const { data, error } = await supabase
+                    .from('tasks')
+                    .select('*')
+                    .eq('project_id', projectId)
+                    .order('created_at', { ascending: false });
 
-            if (error) throw error;
-            return data;
+                if (error) throw error;
+                return data;
+            } else {
+                // Load all tasks into global array
+                const { data, error } = await supabase
+                    .from('tasks')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                tasks = data;
+                console.log('All tasks loaded:', tasks.length);
+            }
         } else {
-            // Demo mode - filter tasks by project ID
-            return tasks.filter(task => task.project_id === projectId);
+            // Demo mode
+            if (projectId) {
+                return tasks.filter(task => task.project_id === projectId);
+            } else {
+                // Tasks are already loaded from demoData
+                console.log('Demo tasks loaded:', tasks.length);
+            }
         }
     } catch (error) {
         console.error('Error loading tasks:', error);
-        return [];
+        if (projectId) {
+            return [];
+        }
     }
 }
 
@@ -1224,6 +1323,111 @@ async function deleteLeave(leaveId) {
     }
 }
 
+// Load holiday data
+async function loadHolidayData() {
+    try {
+        // Load US holidays
+        const usResponse = await fetch('us-leaves.json');
+        usHolidays = await usResponse.json();
+
+        // Load SL holidays
+        const slResponse = await fetch('sl-leaves.json');
+        slHolidays = await slResponse.json();
+
+        console.log('Holiday data loaded successfully');
+    } catch (error) {
+        console.error('Error loading holiday data:', error);
+        // Fallback to empty arrays
+        usHolidays = [];
+        slHolidays = [];
+    }
+}
+
+// Holiday Calendar Functions
+function renderHolidayCalendar() {
+    const container = document.getElementById('holidayCalendarContent');
+    const selectedYear = document.getElementById('holidayYear').value;
+
+    if (!container) return;
+
+    // Show user's work schedule info
+    const userScheduleInfo = `
+        <div class="user-schedule-info">
+            <span class="schedule-flag">${currentUser.work_schedule === 'US' ? '🇺🇸' : '🇱🇰'}</span>
+            Your work schedule: ${currentUser.work_schedule}
+            (showing ${currentUser.work_schedule === 'US' ? 'US Federal' : 'Sri Lankan'} holidays)
+        </div>
+    `;
+
+    // Filter holidays based on user's work schedule and selected year
+    let holidaysToShow = [];
+
+    if (currentUser.work_schedule === 'US') {
+        holidaysToShow = usHolidays.filter(holiday =>
+            holiday.date.startsWith(selectedYear)
+        );
+    } else if (currentUser.work_schedule === 'SL') {
+        holidaysToShow = slHolidays.filter(holiday =>
+            holiday.start.startsWith(selectedYear)
+        );
+    }
+
+    // Sort holidays by date
+    holidaysToShow.sort((a, b) => {
+        const dateA = new Date(a.date || a.start);
+        const dateB = new Date(b.date || b.start);
+        return dateA - dateB;
+    });
+
+    let holidayListHTML = '';
+
+    if (holidaysToShow.length === 0) {
+        holidayListHTML = '<div class="no-holidays">No holidays found for this year</div>';
+    } else {
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+
+        holidayListHTML = `
+            <div class="holiday-section ${currentUser.work_schedule === 'US' ? 'us-holidays' : 'sl-holidays'}">
+                <h3>
+                    <span class="flag-icon">${currentUser.work_schedule === 'US' ? '🇺🇸' : '🇱🇰'}</span>
+                    ${currentUser.work_schedule === 'US' ? 'US Federal Holidays' : 'Sri Lankan Public Holidays'} ${selectedYear}
+                </h3>
+                <div class="holiday-list">
+                    ${holidaysToShow.map(holiday => {
+                        const holidayDate = holiday.date || holiday.start;
+                        const holidayName = holiday.name || holiday.summary;
+                        const holidayDateObj = new Date(holidayDate);
+                        const isToday = holidayDate === todayStr;
+                        const isUpcoming = holidayDateObj > today && !isToday;
+                        const dayName = holidayDateObj.toLocaleDateString('en-US', { weekday: 'long' });
+                        const formattedDate = holidayDateObj.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric'
+                        });
+
+                        let itemClass = `holiday-item ${currentUser.work_schedule.toLowerCase()}-holiday`;
+                        if (isToday) itemClass += ' today';
+                        else if (isUpcoming) itemClass += ' upcoming';
+
+                        return `
+                            <div class="${itemClass}">
+                                <div class="holiday-name">${holidayName}</div>
+                                <div class="holiday-date">
+                                    ${formattedDate}
+                                    <span class="holiday-day">${dayName}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    container.innerHTML = userScheduleInfo + '<div class="holiday-calendar">' + holidayListHTML + '</div>';
+}
+
 // Helper Functions
 function loadWebmastersIntoSelect() {
     const select = document.getElementById('assignedWebmaster');
@@ -1318,32 +1522,473 @@ async function setupDatabase() {
     console.log('Database setup should be done through Supabase Dashboard');
 }
 
-// Event listeners for project form and modals
-document.getElementById('addProjectBtn')?.addEventListener('click', () => openProjectModal());
-document.getElementById('cancelProject').addEventListener('click', closeModals);
-document.getElementById('projectForm').addEventListener('submit', handleProjectSubmit);
+// Goal Tracking Functions
+function isWorkingDay(date, workSchedule) {
+    const dateObj = new Date(date);
+    const dayOfWeek = dateObj.getDay();
 
-// Task-related event listeners
-document.getElementById('addTaskBtn')?.addEventListener('click', () => openTaskModal());
-document.getElementById('cancelTask').addEventListener('click', closeModals);
-document.getElementById('taskForm').addEventListener('submit', handleTaskSubmit);
+    // Check if it's a weekend (Saturday = 6, Sunday = 0)
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+        return false;
+    }
 
-// Filter and search event listeners
-document.getElementById('statusFilter').addEventListener('change', filterProjects);
-document.getElementById('searchProject').addEventListener('input', filterProjects);
+    // Check holidays based on work schedule
+    const dateString = dateObj.toISOString().split('T')[0];
 
-// Issues checkbox event listeners
-const issues8HoursCheckbox = document.getElementById('issuesAfter8Hours');
-const issues10DaysCheckbox = document.getElementById('issuesAfter10Days');
+    if (workSchedule === 'US') {
+        return !usHolidays.some(holiday => holiday.date === dateString);
+    } else if (workSchedule === 'SL') {
+        return !slHolidays.some(holiday => {
+            const holidayStart = new Date(holiday.start).toISOString().split('T')[0];
+            const holidayEnd = new Date(holiday.end).toISOString().split('T')[0];
+            return dateString >= holidayStart && dateString < holidayEnd;
+        });
+    }
 
-if (issues8HoursCheckbox) {
-    issues8HoursCheckbox.addEventListener('change', function() {
-        toggleIssuesContainer('issues8HoursContainer', this.checked);
+    return true;
+}
+
+function addWorkingDays(startDate, workingDays, workSchedule) {
+    let currentDate = new Date(startDate);
+    let daysAdded = 0;
+
+    while (daysAdded < workingDays) {
+        currentDate.setDate(currentDate.getDate() + 1);
+        if (isWorkingDay(currentDate, workSchedule)) {
+            daysAdded++;
+        }
+    }
+
+    return currentDate;
+}
+
+function getWorkingDaysBetween(startDate, endDate, workSchedule) {
+    let currentDate = new Date(startDate);
+    const end = new Date(endDate);
+    let workingDays = 0;
+
+    while (currentDate < end) {
+        if (isWorkingDay(currentDate, workSchedule)) {
+            workingDays++;
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return workingDays;
+}
+
+function getNextMonthlyGoalDate() {
+    const today = new Date();
+    const goalDate = new Date(today.getFullYear(), today.getMonth(), 10);
+
+    // If we're past the 10th of this month, get next month's 10th
+    if (today.getDate() > 10) {
+        goalDate.setMonth(goalDate.getMonth() + 1);
+    }
+
+    return goalDate;
+}
+
+function getNextBiweeklyGoalDate() {
+    const today = new Date();
+    let nextMonday = new Date(today);
+
+    // Find next Monday
+    const daysUntilMonday = (8 - today.getDay()) % 7;
+    nextMonday.setDate(today.getDate() + daysUntilMonday);
+
+    // Check if it's a biweekly Monday (every other Monday)
+    // For simplicity, we'll use week number to determine this
+    const weekNumber = Math.floor((nextMonday - new Date(nextMonday.getFullYear(), 0, 1)) / (7 * 24 * 60 * 60 * 1000));
+
+    if (weekNumber % 2 === 0) {
+        return nextMonday;
+    } else {
+        // If not a biweekly Monday, get the next one
+        nextMonday.setDate(nextMonday.getDate() + 7);
+        return nextMonday;
+    }
+}
+
+function getLastMonthPeriod(evaluationDate = new Date()) {
+    const endDate = new Date(evaluationDate.getFullYear(), evaluationDate.getMonth(), 10);
+    const startDate = new Date(endDate);
+    startDate.setMonth(startDate.getMonth() - 1);
+
+    return { startDate, endDate };
+}
+
+function getLastTwoWeeksPeriod(evaluationDate = new Date()) {
+    const endDate = new Date(evaluationDate);
+    const startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() - 14);
+
+    return { startDate, endDate };
+}
+
+// Monthly Goal Evaluation Functions
+function evaluateDesignConversionGoal(userId, userRole, evaluationDate = new Date()) {
+    const { startDate, endDate } = getLastMonthPeriod(evaluationDate);
+    const targetPercentage = userRole === 'webmaster_level_1' ? 90 : 80;
+
+    // Get projects assigned to user in the period
+    const userProjects = projects.filter(project =>
+        project.assigned_webmaster === userId &&
+        new Date(project.webmaster_assigned_date) >= startDate &&
+        new Date(project.webmaster_assigned_date) <= endDate
+    );
+
+    if (userProjects.length === 0) {
+        return { achieved: true, total: 0, successful: 0, percentage: 100, details: 'No projects in period' };
+    }
+
+    const sentBackProjects = userProjects.filter(project => project.manager_sent_back === true);
+    const successful = userProjects.length - sentBackProjects.length;
+    const percentage = (successful / userProjects.length) * 100;
+
+    return {
+        achieved: percentage >= targetPercentage,
+        total: userProjects.length,
+        successful: successful,
+        percentage: Math.round(percentage * 100) / 100,
+        details: `${successful}/${userProjects.length} projects not sent back`
+    };
+}
+
+function evaluate8HourTechnicalGoal(userId, evaluationDate = new Date()) {
+    const { startDate, endDate } = getLastMonthPeriod(evaluationDate);
+
+    // Get projects that went live in the period
+    const liveProjects = projects.filter(project =>
+        project.assigned_webmaster === userId &&
+        project.dns_changed_date &&
+        new Date(project.dns_changed_date) >= startDate &&
+        new Date(project.dns_changed_date) <= endDate
+    );
+
+    if (liveProjects.length === 0) {
+        return { achieved: true, total: 0, successful: 0, percentage: 100, details: 'No sites went live in period' };
+    }
+
+    const issueProjects = liveProjects.filter(project => project.issues_after_8_hours === true);
+    const successful = liveProjects.length - issueProjects.length;
+    const percentage = (successful / liveProjects.length) * 100;
+
+    return {
+        achieved: percentage === 100,
+        total: liveProjects.length,
+        successful: successful,
+        percentage: Math.round(percentage * 100) / 100,
+        details: `${successful}/${liveProjects.length} sites without 8-hour issues`
+    };
+}
+
+function evaluate10DayComplianceGoal(userId, evaluationDate = new Date()) {
+    const { startDate, endDate } = getLastMonthPeriod(evaluationDate);
+
+    // Get projects that went live in the period
+    const liveProjects = projects.filter(project =>
+        project.assigned_webmaster === userId &&
+        project.dns_changed_date &&
+        new Date(project.dns_changed_date) >= startDate &&
+        new Date(project.dns_changed_date) <= endDate
+    );
+
+    if (liveProjects.length === 0) {
+        return { achieved: true, total: 0, successful: 0, percentage: 100, details: 'No sites went live in period' };
+    }
+
+    const issueProjects = liveProjects.filter(project => project.issues_after_10_days === true);
+    const successful = liveProjects.length - issueProjects.length;
+    const percentage = (successful / liveProjects.length) * 100;
+
+    return {
+        achieved: percentage === 100,
+        total: liveProjects.length,
+        successful: successful,
+        percentage: Math.round(percentage * 100) / 100,
+        details: `${successful}/${liveProjects.length} sites without 10-day issues`
+    };
+}
+
+function evaluateNoReopenedBugsGoal(userId, evaluationDate = new Date()) {
+    const { startDate, endDate } = getLastMonthPeriod(evaluationDate);
+
+    // Get projects assigned to user in the period
+    const userProjects = projects.filter(project =>
+        project.assigned_webmaster === userId &&
+        new Date(project.webmaster_assigned_date) >= startDate &&
+        new Date(project.webmaster_assigned_date) <= endDate
+    );
+
+    if (userProjects.length === 0) {
+        return { achieved: true, total: 0, successful: 0, percentage: 100, details: 'No projects in period' };
+    }
+
+    const reopenedProjects = userProjects.filter(project =>
+        project.wp_reopened_bugs === true ||
+        project.page_reopened_bugs === true ||
+        project.golive_reopened_bugs === true
+    );
+
+    const successful = userProjects.length - reopenedProjects.length;
+    const percentage = (successful / userProjects.length) * 100;
+
+    return {
+        achieved: percentage === 100,
+        total: userProjects.length,
+        successful: successful,
+        percentage: Math.round(percentage * 100) / 100,
+        details: `${successful}/${userProjects.length} projects without reopened bugs`
+    };
+}
+
+function evaluatePageBugFixTimeGoal(userId, workSchedule, evaluationDate = new Date()) {
+    const { startDate, endDate } = getLastMonthPeriod(evaluationDate);
+
+    // Get projects with page creation bugs in the period
+    const bugProjects = projects.filter(project =>
+        project.assigned_webmaster === userId &&
+        project.date_finished_page_qa &&
+        project.date_finished_page_bugs &&
+        new Date(project.date_finished_page_qa) >= startDate &&
+        new Date(project.date_finished_page_qa) <= endDate
+    );
+
+    if (bugProjects.length === 0) {
+        return { achieved: true, total: 0, successful: 0, percentage: 100, details: 'No page bugs in period' };
+    }
+
+    let successful = 0;
+    bugProjects.forEach(project => {
+        const qaDate = new Date(project.date_finished_page_qa);
+        const bugFixDate = new Date(project.date_finished_page_bugs);
+        const workingDaysBetween = getWorkingDaysBetween(qaDate, bugFixDate, workSchedule);
+
+        if (workingDaysBetween <= 3) {
+            successful++;
+        }
+    });
+
+    const percentage = (successful / bugProjects.length) * 100;
+
+    return {
+        achieved: percentage === 100,
+        total: bugProjects.length,
+        successful: successful,
+        percentage: Math.round(percentage * 100) / 100,
+        details: `${successful}/${bugProjects.length} bug fixes completed within 3 working days`
+    };
+}
+
+// Biweekly Goal Evaluation Functions
+function evaluateTaskUpdateGoal(userId, workSchedule, evaluationDate = new Date()) {
+    const { startDate, endDate } = getLastTwoWeeksPeriod(evaluationDate);
+
+    // Get all tasks for projects assigned to user in the period
+    const userProjectIds = projects
+        .filter(project => project.assigned_webmaster === userId)
+        .map(project => project.id);
+
+    const userTasks = tasks.filter(task =>
+        userProjectIds.includes(task.project_id) &&
+        task.sent_date &&
+        new Date(task.sent_date) >= startDate &&
+        new Date(task.sent_date) <= endDate
+    );
+
+    if (userTasks.length === 0) {
+        return { achieved: true, total: 0, successful: 0, percentage: 100, details: 'No tasks assigned in period' };
+    }
+
+    let successful = 0;
+    userTasks.forEach(task => {
+        const sentDate = new Date(task.sent_date);
+        let achievedTimeliness = false;
+
+        // Check if ticket was updated within 2 working days
+        if (task.ticket_updated_date) {
+            const updatedDate = new Date(task.ticket_updated_date);
+            const workingDaysBetween = getWorkingDaysBetween(sentDate, updatedDate, workSchedule);
+            if (workingDaysBetween <= 2) {
+                achievedTimeliness = true;
+            }
+        }
+
+        // If not updated but completed within 2 working days, also consider as achieved
+        if (!achievedTimeliness && task.completed_date) {
+            const completedDate = new Date(task.completed_date);
+            const workingDaysBetween = getWorkingDaysBetween(sentDate, completedDate, workSchedule);
+            if (workingDaysBetween <= 2) {
+                achievedTimeliness = true;
+            }
+        }
+
+        if (achievedTimeliness) {
+            successful++;
+        }
+    });
+
+    const percentage = (successful / userTasks.length) * 100;
+
+    return {
+        achieved: percentage === 100,
+        total: userTasks.length,
+        successful: successful,
+        percentage: Math.round(percentage * 100) / 100,
+        details: `${successful}/${userTasks.length} tasks updated or completed within 2 working days`
+    };
+}
+
+function evaluateDesignCompletionGoal(userId, workSchedule, evaluationDate = new Date()) {
+    const { startDate, endDate } = getLastTwoWeeksPeriod(evaluationDate);
+
+    // Get projects assigned to user in the period
+    const userProjects = projects.filter(project =>
+        project.assigned_webmaster === userId &&
+        project.webmaster_assigned_date &&
+        new Date(project.webmaster_assigned_date) >= startDate &&
+        new Date(project.webmaster_assigned_date) <= endDate
+    );
+
+    if (userProjects.length === 0) {
+        return { achieved: true, total: 0, successful: 0, percentage: 100, details: 'No projects assigned in period' };
+    }
+
+    let successful = 0;
+    userProjects.forEach(project => {
+        if (project.target_date && project.date_sent_to_wp_qa) {
+            const targetDate = new Date(project.target_date);
+            const qaDate = new Date(project.date_sent_to_wp_qa);
+
+            // If sent to QA on or before target date, it's successful
+            if (qaDate <= targetDate) {
+                successful++;
+            }
+        }
+        // If no QA date or target date, consider it incomplete/not achieved
+    });
+
+    const percentage = (successful / userProjects.length) * 100;
+
+    return {
+        achieved: percentage === 100,
+        total: userProjects.length,
+        successful: successful,
+        percentage: Math.round(percentage * 100) / 100,
+        details: `${successful}/${userProjects.length} designs completed by target date`
+    };
+}
+
+// Main Goal Tracking Function
+async function calculateGoalsForUser(userId) {
+    const user = users.find(u => u.id === userId);
+    if (!user) return null;
+
+    const today = new Date();
+    const workSchedule = user.work_schedule;
+    const userRole = user.role;
+
+    // Monthly Goals (evaluated on 10th of each month)
+    const monthlyGoals = {
+        designConversion: evaluateDesignConversionGoal(userId, userRole, today),
+        technicalIssues8Hour: evaluate8HourTechnicalGoal(userId, today),
+        compliance10Day: evaluate10DayComplianceGoal(userId, today),
+        noReopenedBugs: evaluateNoReopenedBugsGoal(userId, today),
+        pageBugFixTime: evaluatePageBugFixTimeGoal(userId, workSchedule, today)
+    };
+
+    // Biweekly Goals (evaluated every other Monday)
+    const biweeklyGoals = {
+        taskUpdates: evaluateTaskUpdateGoal(userId, workSchedule, today),
+        designCompletion: evaluateDesignCompletionGoal(userId, workSchedule, today)
+    };
+
+    return {
+        user: user,
+        evaluationDate: today.toISOString().split('T')[0],
+        nextMonthlyEvaluation: getNextMonthlyGoalDate().toISOString().split('T')[0],
+        nextBiweeklyEvaluation: getNextBiweeklyGoalDate().toISOString().split('T')[0],
+        monthlyGoals: monthlyGoals,
+        biweeklyGoals: biweeklyGoals
+    };
+}
+
+async function calculateAllGoals() {
+    const webmasters = users.filter(u => u.role.includes('webmaster'));
+    const allGoals = [];
+
+    for (const webmaster of webmasters) {
+        const goals = await calculateGoalsForUser(webmaster.id);
+        if (goals) {
+            allGoals.push(goals);
+        }
+    }
+
+    return allGoals;
+}
+
+// UI Functions for Goal Tracking
+function renderGoalTrackingTab() {
+    return calculateAllGoals().then(allGoals => {
+        const container = document.getElementById('goalTrackingContent');
+        if (!container) return;
+
+        if (allGoals.length === 0) {
+            container.innerHTML = '<div class="no-data">No webmasters found for goal tracking</div>';
+            return;
+        }
+
+        container.innerHTML = allGoals.map(userGoals => `
+            <div class="goal-user-section">
+                <div class="goal-user-header">
+                    <h3>${userGoals.user.name} (${formatRole(userGoals.user.role)})</h3>
+                    <div class="goal-schedule-info">
+                        <span>Work Schedule: ${userGoals.user.work_schedule}</span>
+                        <span>Next Monthly Eval: ${formatDate(userGoals.nextMonthlyEvaluation)}</span>
+                        <span>Next Biweekly Eval: ${formatDate(userGoals.nextBiweeklyEvaluation)}</span>
+                    </div>
+                </div>
+
+                <div class="goals-container">
+                    <div class="goal-section">
+                        <h4>Monthly Goals</h4>
+                        <div class="goal-grid">
+                            ${renderGoalCard('Design Conversion Success', userGoals.monthlyGoals.designConversion)}
+                            ${renderGoalCard('8-Hour Technical Check', userGoals.monthlyGoals.technicalIssues8Hour)}
+                            ${renderGoalCard('10-Day Compliance Check', userGoals.monthlyGoals.compliance10Day)}
+                            ${renderGoalCard('No Reopened Bugs', userGoals.monthlyGoals.noReopenedBugs)}
+                            ${renderGoalCard('Page Bug Fix Time', userGoals.monthlyGoals.pageBugFixTime)}
+                        </div>
+                    </div>
+
+                    <div class="goal-section">
+                        <h4>Biweekly Goals</h4>
+                        <div class="goal-grid">
+                            ${renderGoalCard('Task Updates Timeliness', userGoals.biweeklyGoals.taskUpdates)}
+                            ${renderGoalCard('Design Completion Time', userGoals.biweeklyGoals.designCompletion)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
     });
 }
 
-if (issues10DaysCheckbox) {
-    issues10DaysCheckbox.addEventListener('change', function() {
-        toggleIssuesContainer('issues10DaysContainer', this.checked);
-    });
+function renderGoalCard(title, goalResult) {
+    const statusClass = goalResult.achieved ? 'achieved' : 'not-achieved';
+    const statusIcon = goalResult.achieved ? '✅' : '❌';
+
+    return `
+        <div class="goal-card ${statusClass}">
+            <div class="goal-header">
+                <span class="goal-title">${title}</span>
+                <span class="goal-status">${statusIcon}</span>
+            </div>
+            <div class="goal-details">
+                <div class="goal-percentage">${goalResult.percentage}%</div>
+                <div class="goal-description">${goalResult.details}</div>
+            </div>
+        </div>
+    `;
 }

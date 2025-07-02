@@ -48,6 +48,24 @@ A comprehensive project management system built with HTML, CSS, JavaScript, and 
   - Visual status indicators (completed/pending)
   - Manager-only task management permissions
 
+### Goal Tracking System
+- **Monthly Goals (evaluated on 10th of each month):**
+  - Design conversion quality (90% for Level 1, 80% for Level 2)
+  - 8-hour technical issue tracking
+  - 10-day compliance standards
+  - Zero reopened bugs policy
+  - Page bug fix time (3 working days)
+
+- **Biweekly Goals (evaluated every other Monday):**
+  - Task update timeliness (2 working days)
+  - Design completion deadlines
+
+- **Working Day Calculations:**
+  - Excludes weekends
+  - Considers US Federal holidays for US schedule
+  - Considers Sri Lankan holidays for SL schedule
+  - Automatic evaluation and achievement tracking
+
 ### Leave Management
 - Track user leaves with start/end dates
 - Leave reasons and scheduling conflicts
