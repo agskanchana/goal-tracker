@@ -66,7 +66,7 @@ const demoData = {
             assigned_webmaster: 2,
             webmaster_assigned_date: '2025-06-10',
             target_date: '2025-06-25',
-            project_status: 'Page creation',
+            project_status: 'Page creation QA',
             signed_up_date: '2025-05-15',
             contract_start_date: '2025-06-01',
             manager_sent_back: false,
@@ -93,7 +93,7 @@ const demoData = {
             assigned_webmaster: 3,
             webmaster_assigned_date: '2025-06-20',
             target_date: '2025-07-10',
-            project_status: 'WP conversion',
+            project_status: 'WP conversion - Pending',
             signed_up_date: '2025-06-01',
             contract_start_date: '2025-06-15',
             manager_sent_back: true,
@@ -851,6 +851,17 @@ async function loadTasks(projectId = null) {
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
+
+                // Also update global tasks array with these project tasks
+                data.forEach(projectTask => {
+                    const existingIndex = tasks.findIndex(t => t.id === projectTask.id);
+                    if (existingIndex > -1) {
+                        tasks[existingIndex] = projectTask;
+                    } else {
+                        tasks.push(projectTask);
+                    }
+                });
+
                 return data;
             } else {
                 // Load all tasks into global array
@@ -866,7 +877,8 @@ async function loadTasks(projectId = null) {
         } else {
             // Demo mode
             if (projectId) {
-                return tasks.filter(task => task.project_id === projectId);
+                const projectTasks = tasks.filter(task => task.project_id === projectId);
+                return projectTasks;
             } else {
                 // Tasks are already loaded from demoData
                 console.log('Demo tasks loaded:', tasks.length);
@@ -931,6 +943,14 @@ function openTaskModal(taskId = null) {
         title.textContent = 'Edit Task';
         currentEditingTaskId = taskId;
         const task = tasks.find(t => t.id === taskId);
+
+        if (!task) {
+            console.error('Task not found with ID:', taskId);
+            console.log('Available global tasks:', tasks);
+            showErrorMessage('Task not found. Please refresh and try again.');
+            return;
+        }
+
         populateTaskForm(task);
     } else {
         title.textContent = 'Add Task';
@@ -944,6 +964,11 @@ function openTaskModal(taskId = null) {
 }
 
 function populateTaskForm(task) {
+    if (!task) {
+        console.error('No task provided to populateTaskForm');
+        return;
+    }
+
     const fieldMappings = {
         'task_name': 'taskName',
         'description': 'taskDescription',
@@ -958,6 +983,8 @@ function populateTaskForm(task) {
 
         if (input && task[dbKey] !== null && task[dbKey] !== undefined) {
             input.value = task[dbKey];
+        } else if (!input && fieldMappings[dbKey]) {
+            console.warn(`Form field not found: ${formFieldId} for task field: ${dbKey}`);
         }
     });
 }

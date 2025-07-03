@@ -329,12 +329,18 @@ body {
     text-transform: uppercase;
 }
 
-.status-wp-conversion { background: #ffeaa7; color: #636e72; }
-.status-wp-conversion-review { background: #fab1a0; color: #2d3436; }
-.status-page-creation { background: #74b9ff; color: #2d3436; }
-.status-page-creation-qa { background: #a29bfe; color: #2d3436; }
+.status-wp-conversion---pending { background: #ffeaa7; color: #636e72; }
+.status-wp-conversion-qa { background: #fab1a0; color: #2d3436; }
+.status-wp-conversion-qa---fixing { background: #e17055; color: white; }
+.status-page-creation---pending { background: #dda0dd; color: #2d3436; }
+.status-page-creation-qa { background: #74b9ff; color: #2d3436; }
+.status-page-creation-qa---fixing { background: #6c5ce7; color: white; }
+.status-page-creation-qa---verifying { background: #a29bfe; color: #2d3436; }
+.status-golive-approval-pending { background: #fdcb6e; color: #2d3436; }
 .status-golive-qa { background: #fd79a8; color: #2d3436; }
-.status-completed { background: #00b894; color: white; }
+.status-golive-qa---fixing { background: #e84393; color: white; }
+.status-live { background: #00b894; color: white; }
+.status-completed { background: #00a085; color: white; }
 
 .project-info {
     margin-bottom: 15px;
