@@ -89,8 +89,26 @@ body {
     align-items: center;
     gap: 15px;
 }
-.goals-header{
-    color: #000;
+.goals-header {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #667eea;
+}
+
+.goals-header h2 {
+    margin: 0 0 8px 0;
+    color: #333;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.goals-header p {
+    margin: 0;
+    color: #666;
+    font-size: 14px;
 }
 
 .user-info {
