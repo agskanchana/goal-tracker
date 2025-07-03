@@ -89,6 +89,9 @@
                         <option value="Live">Live</option>
                         <option value="Completed">Completed</option>
                     </select>
+                    <select id="projectWebmasterFilter" class="manager-only">
+                        <option value="">All Webmasters</option>
+                    </select>
                     <input type="text" id="searchProject" placeholder="Search projects...">
                 </div>
 
@@ -104,6 +107,12 @@
                     <button id="refreshGoalsBtn" class="btn btn-primary">
                         <i class="fas fa-sync"></i> Refresh Goals
                     </button>
+                </div>
+
+                <div class="filters manager-only">
+                    <select id="webmasterFilter">
+                        <option value="">All Webmasters</option>
+                    </select>
                 </div>
 
                 <div id="goalTrackingContent" class="goals-dashboard">

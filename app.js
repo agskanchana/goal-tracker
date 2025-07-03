@@ -275,6 +275,12 @@ function setupEventListeners() {
     document.getElementById('statusFilter').addEventListener('change', filterProjects);
     document.getElementById('searchProject').addEventListener('input', filterProjects);
 
+    // Project webmaster filter event listener
+    const projectWebmasterFilter = document.getElementById('projectWebmasterFilter');
+    if (projectWebmasterFilter) {
+        projectWebmasterFilter.addEventListener('change', filterProjects);
+    }
+
     // Issues checkbox event listeners
     const issues8HoursCheckbox = document.getElementById('issuesAfter8Hours');
     const issues10DaysCheckbox = document.getElementById('issuesAfter10Days');
@@ -295,6 +301,12 @@ function setupEventListeners() {
     const refreshGoalsBtn = document.getElementById('refreshGoalsBtn');
     if (refreshGoalsBtn) {
         refreshGoalsBtn.addEventListener('click', renderGoalTrackingTab);
+    }
+
+    // Webmaster filter event listener
+    const webmasterFilter = document.getElementById('webmasterFilter');
+    if (webmasterFilter) {
+        webmasterFilter.addEventListener('change', renderGoalTrackingTab);
     }
 
     // Holiday calendar event listener
@@ -420,6 +432,8 @@ async function loadDashboardData() {
     // Load webmasters for project form
     loadWebmastersIntoSelect();
     loadUsersIntoSelect();
+    loadWebmastersIntoGoalFilter(); // Load webmasters for goal filter
+    loadWebmastersIntoProjectFilter(); // Load webmasters for project filter
 }
 
 // Tab Navigation
@@ -569,12 +583,18 @@ function renderProjects() {
 
 function filterProjects() {
     const statusFilter = document.getElementById('statusFilter').value;
+    const webmasterFilter = document.getElementById('projectWebmasterFilter');
+    const selectedWebmasterId = webmasterFilter ? webmasterFilter.value : '';
     const searchTerm = document.getElementById('searchProject').value.toLowerCase();
 
     let filteredProjects = projects;
 
     if (statusFilter) {
         filteredProjects = filteredProjects.filter(p => p.project_status === statusFilter);
+    }
+
+    if (selectedWebmasterId) {
+        filteredProjects = filteredProjects.filter(p => p.assigned_webmaster === parseInt(selectedWebmasterId));
     }
 
     if (searchTerm) {
@@ -1569,6 +1589,26 @@ function loadWebmastersIntoSelect() {
         webmasters.map(user => `<option value="${user.id}">${user.name}</option>`).join('');
 }
 
+function loadWebmastersIntoGoalFilter() {
+    const select = document.getElementById('webmasterFilter');
+    if (!select) return;
+
+    const webmasters = users.filter(u => u.role.includes('webmaster'));
+
+    select.innerHTML = '<option value="">All Webmasters</option>' +
+        webmasters.map(user => `<option value="${user.id}">${user.name}</option>`).join('');
+}
+
+function loadWebmastersIntoProjectFilter() {
+    const select = document.getElementById('projectWebmasterFilter');
+    if (!select) return;
+
+    const webmasters = users.filter(u => u.role.includes('webmaster'));
+
+    select.innerHTML = '<option value="">All Webmasters</option>' +
+        webmasters.map(user => `<option value="${user.id}">${user.name}</option>`).join('');
+}
+
 function loadUsersIntoSelect() {
     const select = document.getElementById('leaveUser');
 
@@ -2072,6 +2112,13 @@ async function calculateAllGoals() {
     if (currentUser.role === 'manager') {
         // Managers can see all webmasters' goals
         webmasters = users.filter(u => u.role.includes('webmaster'));
+
+        // Apply webmaster filter if selected
+        const webmasterFilter = document.getElementById('webmasterFilter');
+        if (webmasterFilter && webmasterFilter.value) {
+            const selectedWebmasterId = parseInt(webmasterFilter.value);
+            webmasters = webmasters.filter(u => u.id === selectedWebmasterId);
+        }
     } else {
         // Non-managers can only see their own goals if they are webmasters
         if (currentUser.role.includes('webmaster')) {
@@ -2115,12 +2162,25 @@ function renderGoalTrackingTab() {
         // Add header based on user role
         let headerInfo = '';
         if (currentUser.role === 'manager') {
-            headerInfo = `
-                <div class="goals-header">
-                    <h2>Goal Tracking - All Team Members</h2>
-                    <p>Viewing goals for all webmasters in the system</p>
-                </div>
-            `;
+            const webmasterFilter = document.getElementById('webmasterFilter');
+            const selectedWebmasterId = webmasterFilter ? webmasterFilter.value : '';
+
+            if (selectedWebmasterId) {
+                const selectedWebmaster = users.find(u => u.id === parseInt(selectedWebmasterId));
+                headerInfo = `
+                    <div class="goals-header">
+                        <h2>Goal Tracking - ${selectedWebmaster ? selectedWebmaster.name : 'Selected Webmaster'}</h2>
+                        <p>Viewing goals for the selected webmaster</p>
+                    </div>
+                `;
+            } else {
+                headerInfo = `
+                    <div class="goals-header">
+                        <h2>Goal Tracking - All Team Members</h2>
+                        <p>Viewing goals for all webmasters in the system (${allGoals.length} total)</p>
+                    </div>
+                `;
+            }
         } else {
             headerInfo = `
                 <div class="goals-header">
