@@ -1968,16 +1968,30 @@ function evaluateDesignCompletionGoal(userId, workSchedule, evaluationDate = new
 
     let successful = 0;
     userProjects.forEach(project => {
-        if (project.target_date && project.date_sent_to_wp_qa) {
+        if (project.target_date) {
             const targetDate = new Date(project.target_date);
-            const qaDate = new Date(project.date_sent_to_wp_qa);
+            const today = new Date(evaluationDate);
 
-            // If sent to QA on or before target date, it's successful
-            if (qaDate <= targetDate) {
-                successful++;
+            if (project.date_sent_to_wp_qa) {
+                // Project was sent to QA - check if it was on time
+                const qaDate = new Date(project.date_sent_to_wp_qa);
+                if (qaDate <= targetDate) {
+                    successful++;
+                }
+                // If sent after target date, it's not successful (already handled by not incrementing)
+            } else {
+                // Project not yet sent to QA - only consider it failed if target date has passed
+                if (today <= targetDate) {
+                    // Target date hasn't passed yet, so it's still on track
+                    successful++;
+                }
+                // If today > targetDate and not sent to QA, it's failed (not incremented)
             }
         }
-        // If no QA date or target date, consider it incomplete/not achieved
+        // If no target date, we can't evaluate it (consider as successful to avoid penalizing)
+        else {
+            successful++;
+        }
     });
 
     const percentage = (successful / userProjects.length) * 100;
@@ -1987,7 +2001,7 @@ function evaluateDesignCompletionGoal(userId, workSchedule, evaluationDate = new
         total: userProjects.length,
         successful: successful,
         percentage: Math.round(percentage * 100) / 100,
-        details: `${successful}/${userProjects.length} designs completed by target date`
+        details: `${successful}/${userProjects.length} designs on track or completed by target date`
     };
 }
 
