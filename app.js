@@ -34,26 +34,66 @@ const demoData = {
     users: [
         {
             id: 1,
-            name: 'John Manager',
-            email: 'manager@example.com',
+            name: 'System Manager',
+            email: 'manager@ekwa.com',
             role: 'manager',
             work_schedule: 'US',
-            password: 'password' // Make sure this matches what you're typing
+            password: 'password'
         },
         {
-            id: 2,
-            name: 'Jane Webmaster',
-            email: 'webmaster1@example.com',
+            id: 7,
+            name: 'Anfas',
+            email: 'anfas@ekwa.com',
             role: 'webmaster_level_1',
             work_schedule: 'US',
             password: 'password'
         },
         {
-            id: 3,
-            name: 'Bob Developer',
-            email: 'webmaster2@example.com',
+            id: 8,
+            name: 'Janith',
+            email: 'janith@ekwa.com',
+            role: 'webmaster_level_1',
+            work_schedule: 'US',
+            password: 'password'
+        },
+        {
+            id: 9,
+            name: 'Menuka',
+            email: 'menuka@ekwa.com',
+            role: 'webmaster_level_1',
+            work_schedule: 'US',
+            password: 'password'
+        },
+        {
+            id: 10,
+            name: 'Themiya',
+            email: 'themiya@ekwa.com',
             role: 'webmaster_level_2',
-            work_schedule: 'SL',
+            work_schedule: 'US',
+            password: 'password'
+        },
+        {
+            id: 11,
+            name: 'Dilusha',
+            email: 'dilusha@ekwa.com',
+            role: 'webmaster_level_2',
+            work_schedule: 'US',
+            password: 'password'
+        },
+        {
+            id: 12,
+            name: 'Sivaraj',
+            email: 'sivaraj@ekwa.com',
+            role: 'webmaster_level_2',
+            work_schedule: 'US',
+            password: 'password'
+        },
+        {
+            id: 13,
+            name: 'Janaka',
+            email: 'janaka@ekwa.com',
+            role: 'webmaster_level_2',
+            work_schedule: 'US',
             password: 'password'
         }
     ],
@@ -63,7 +103,7 @@ const demoData = {
             project_name: 'Demo Project 1',
             ticket_link: 'https://example.com/ticket/1',
             design_approved_date: '2025-06-01',
-            assigned_webmaster: 2,
+            assigned_webmaster: 11, // Dilusha
             webmaster_assigned_date: '2025-06-10',
             target_date: '2025-06-25',
             project_status: 'Page creation QA',
@@ -90,7 +130,7 @@ const demoData = {
             project_name: 'Demo Project 2',
             ticket_link: 'https://example.com/ticket/2',
             design_approved_date: '2025-06-15',
-            assigned_webmaster: 3,
+            assigned_webmaster: 13, // Janaka
             webmaster_assigned_date: '2025-06-20',
             target_date: '2025-07-10',
             project_status: 'WP conversion - Pending',
@@ -104,16 +144,51 @@ const demoData = {
             issues_after_10_days: false,
             issues_10_days_text: null,
             created_at: '2025-06-20'
+        },
+        {
+            id: 3,
+            project_name: 'Demo Project 3',
+            ticket_link: 'https://example.com/ticket/3',
+            design_approved_date: '2025-06-20',
+            assigned_webmaster: 12, // Sivaraj
+            webmaster_assigned_date: '2025-06-25',
+            target_date: '2025-07-15',
+            project_status: 'Live',
+            signed_up_date: '2025-06-05',
+            contract_start_date: '2025-06-20',
+            manager_sent_back: false,
+            dns_changed_date: '2025-07-05',
+            date_sent_to_wp_qa: '2025-07-01',
+            date_finished_wp_qa: '2025-07-02',
+            date_finished_wp_bugs: '2025-07-03',
+            wp_reopened_bugs: false,
+            date_sent_to_page_qa: '2025-07-04',
+            date_finished_page_qa: '2025-07-05',
+            date_finished_page_bugs: '2025-07-06',
+            page_reopened_bugs: false,
+            issues_after_8_hours: false,
+            issues_8_hours_text: null,
+            issues_after_10_days: false,
+            issues_10_days_text: null,
+            created_at: '2025-06-25'
         }
     ],
     leaves: [
         {
             id: 1,
-            user_id: 2,
+            user_id: 7, // Anfas
             start_date: '2025-01-15',
             end_date: '2025-01-17',
             reason: 'Personal leave',
             created_at: '2024-12-20'
+        },
+        {
+            id: 2,
+            user_id: 8, // Janith
+            start_date: '2025-02-10',
+            end_date: '2025-02-12',
+            reason: 'Sick leave',
+            created_at: '2025-01-20'
         }
     ],
     tasks: [
@@ -434,6 +509,12 @@ async function loadDashboardData() {
     loadUsersIntoSelect();
     loadWebmastersIntoGoalFilter(); // Load webmasters for goal filter
     loadWebmastersIntoProjectFilter(); // Load webmasters for project filter
+
+    // Check if Goals tab is the active tab and load goals
+    const activeTab = document.querySelector('.nav-tab.active');
+    if (activeTab && activeTab.getAttribute('data-tab') === 'goals') {
+        renderGoalTrackingTab();
+    }
 }
 
 // Tab Navigation
@@ -516,7 +597,7 @@ function renderProjects() {
         return;
     }
 
-    // Add header based on user role
+    // Add header outside the grid
     let headerInfo = '';
     if (currentUser.role === 'manager') {
         headerInfo = `
@@ -534,7 +615,15 @@ function renderProjects() {
         `;
     }
 
-    grid.innerHTML = headerInfo + projects.map(project => `
+    // Insert header before the grid
+    const projectsContainer = grid.parentElement;
+    const existingHeader = projectsContainer.querySelector('.projects-header');
+    if (existingHeader) {
+        existingHeader.remove();
+    }
+    grid.insertAdjacentHTML('beforebegin', headerInfo);
+
+    grid.innerHTML = projects.map(project => `
         <div class="project-card">
             <div class="project-header">
                 <div>
@@ -1809,99 +1898,316 @@ function evaluateDesignConversionGoal(userId, userRole, evaluationDate = new Dat
     const { startDate, endDate } = getLastMonthPeriod(evaluationDate);
     const targetPercentage = userRole === 'webmaster_level_1' ? 90 : 80;
 
-    // Get projects assigned to user in the period
+    // Get projects sent to WP QA by user in the period
     const userProjects = projects.filter(project =>
         project.assigned_webmaster === userId &&
-        new Date(project.webmaster_assigned_date) >= startDate &&
-        new Date(project.webmaster_assigned_date) <= endDate
+        project.date_sent_to_wp_qa &&
+        new Date(project.date_sent_to_wp_qa) >= startDate &&
+        new Date(project.date_sent_to_wp_qa) <= endDate
     );
 
     if (userProjects.length === 0) {
-        return { achieved: true, total: 0, successful: 0, percentage: 100, details: 'No projects in period' };
+        return {
+            achieved: true,
+            total: 0,
+            successful: 0,
+            percentage: 100,
+            details: 'No projects in period',
+            period: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
+            breakdown: [],
+            statistics: {
+                'Total Projects': 0,
+                'Not Sent Back': 0,
+                'Sent Back': 0,
+                'Success Rate': '100%',
+                'Target Rate': `${targetPercentage}%`
+            },
+            explanation: 'No projects were assigned during this evaluation period.'
+        };
     }
 
     const sentBackProjects = userProjects.filter(project => project.manager_sent_back === true);
     const successful = userProjects.length - sentBackProjects.length;
     const percentage = (successful / userProjects.length) * 100;
 
+    // Create detailed breakdown
+    const breakdown = userProjects.map(project => ({
+        projectId: project.id,
+        projectName: project.project_name || `Project ${project.id}`,
+        name: project.project_name || `Project ${project.id}`,
+        status: project.manager_sent_back ? 'Sent Back by Manager' : 'Approved',
+        success: !project.manager_sent_back,
+        sentToQaDate: new Date(project.date_sent_to_wp_qa).toLocaleDateString(),
+        details: project.manager_sent_back ? 'Design was rejected and sent back for revisions' : 'Design was approved without being sent back',
+        ticketLink: project.ticket_link,
+        description: `${project.project_name || `Project ${project.id}`} - ${project.manager_sent_back ? 'Sent Back by Manager' : 'Approved'} (Sent to QA: ${new Date(project.date_sent_to_wp_qa).toLocaleDateString()})`
+    }));
+
+    const statistics = {
+        'Total Projects': userProjects.length,
+        'Not Sent Back': successful,
+        'Sent Back': sentBackProjects.length,
+        'Success Rate': `${Math.round(percentage * 100) / 100}%`,
+        'Target Rate': `${targetPercentage}%`,
+        'Target Level': userRole === 'webmaster_level_1' ? 'Level 1 (90%)' : 'Level 2 (80%)'
+    };
+
+    const explanation = percentage >= targetPercentage
+        ? `Goal achieved! ${successful} out of ${userProjects.length} designs were approved without being sent back (${Math.round(percentage * 100) / 100}%), meeting the ${targetPercentage}% target for ${userRole === 'webmaster_level_1' ? 'Level 1' : 'Level 2'} webmasters.`
+        : `Goal not achieved. Only ${successful} out of ${userProjects.length} designs were approved without being sent back (${Math.round(percentage * 100) / 100}%), falling short of the ${targetPercentage}% target. ${sentBackProjects.length} design${sentBackProjects.length !== 1 ? 's were' : ' was'} sent back for revisions.`;
+
     return {
         achieved: percentage >= targetPercentage,
         total: userProjects.length,
         successful: successful,
         percentage: Math.round(percentage * 100) / 100,
-        details: `${successful}/${userProjects.length} projects not sent back`
+        details: `${successful}/${userProjects.length} projects not sent back`,
+        period: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
+        breakdown: breakdown,
+        statistics: statistics,
+        explanation: explanation
     };
 }
 
 function evaluate8HourTechnicalGoal(userId, evaluationDate = new Date()) {
     const { startDate, endDate } = getLastMonthPeriod(evaluationDate);
 
-    // Get projects that went live in the period
-    const liveProjects = projects.filter(project =>
+    // Get projects that finished golive bugs in the period
+    const completedProjects = projects.filter(project =>
         project.assigned_webmaster === userId &&
-        project.dns_changed_date &&
-        new Date(project.dns_changed_date) >= startDate &&
-        new Date(project.dns_changed_date) <= endDate
+        project.date_finished_golive_bugs &&
+        new Date(project.date_finished_golive_bugs) >= startDate &&
+        new Date(project.date_finished_golive_bugs) <= endDate
     );
 
-    if (liveProjects.length === 0) {
-        return { achieved: true, total: 0, successful: 0, percentage: 100, details: 'No sites went live in period' };
+    if (completedProjects.length === 0) {
+        return {
+            achieved: true,
+            total: 0,
+            successful: 0,
+            percentage: 100,
+            details: 'No golive bugs completed in period',
+            period: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
+            breakdown: [],
+            statistics: {
+                'Total Projects Completed': 0,
+                'No 8-Hour Issues': 0,
+                'Had 8-Hour Issues': 0,
+                'Success Rate': '100%',
+                'Target Rate': '100%'
+            },
+            explanation: 'No golive bug fixes were completed during this evaluation period.'
+        };
     }
 
-    const issueProjects = liveProjects.filter(project => project.issues_after_8_hours === true);
-    const successful = liveProjects.length - issueProjects.length;
-    const percentage = (successful / liveProjects.length) * 100;
+    const issueProjects = completedProjects.filter(project => project.issues_after_8_hours === true);
+    const successful = completedProjects.length - issueProjects.length;
+    const percentage = (successful / completedProjects.length) * 100;
+
+    // Create detailed breakdown
+    const breakdown = completedProjects.map(project => ({
+        projectId: project.id,
+        projectName: project.project_name || `Project ${project.id}`,
+        name: project.project_name || `Project ${project.id}`,
+        status: project.issues_after_8_hours ? 'Had Issues' : 'No Issues',
+        success: !project.issues_after_8_hours,
+        goliveCompletedDate: new Date(project.date_finished_golive_bugs).toLocaleDateString(),
+        details: project.issues_after_8_hours
+            ? 'Technical issues were reported within 8 hours of golive completion'
+            : 'No technical issues reported within 8 hours of golive completion',
+        ticketLink: project.ticket_link,
+        description: `${project.project_name || `Project ${project.id}`} - ${project.issues_after_8_hours ? 'Had Issues' : 'No Issues'} (Golive completed: ${new Date(project.date_finished_golive_bugs).toLocaleDateString()})`
+    }));
+
+    const statistics = {
+        'Total Projects Completed': completedProjects.length,
+        'No 8-Hour Issues': successful,
+        'Had 8-Hour Issues': issueProjects.length,
+        'Success Rate': `${Math.round(percentage * 100) / 100}%`,
+        'Target Rate': '100%'
+    };
+
+    const explanation = percentage === 100
+        ? `Goal achieved! All ${completedProjects.length} projects that completed golive had no technical issues within the first 8 hours, meeting the 100% target.`
+        : `Goal not achieved. ${issueProjects.length} out of ${completedProjects.length} projects had technical issues within 8 hours of golive completion (${Math.round(percentage * 100) / 100}% success rate). The target is 100% - no technical issues should occur within the first 8 hours after golive completion.`;
 
     return {
         achieved: percentage === 100,
-        total: liveProjects.length,
+        total: completedProjects.length,
         successful: successful,
         percentage: Math.round(percentage * 100) / 100,
-        details: `${successful}/${liveProjects.length} sites without 8-hour issues`
+        details: `${successful}/${completedProjects.length} projects without 8-hour issues`,
+        period: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
+        breakdown: breakdown,
+        statistics: statistics,
+        explanation: explanation
     };
 }
 
 function evaluate10DayComplianceGoal(userId, evaluationDate = new Date()) {
     const { startDate, endDate } = getLastMonthPeriod(evaluationDate);
 
-    // Get projects that went live in the period
-    const liveProjects = projects.filter(project =>
-        project.assigned_webmaster === userId &&
-        project.dns_changed_date &&
-        new Date(project.dns_changed_date) >= startDate &&
-        new Date(project.dns_changed_date) <= endDate
-    );
+    // Get projects where 10 working days from DNS change falls within the evaluation period
+    const relevantProjects = projects.filter(project => {
+        if (project.assigned_webmaster !== userId || !project.dns_changed_date) return false;
 
-    if (liveProjects.length === 0) {
-        return { achieved: true, total: 0, successful: 0, percentage: 100, details: 'No sites went live in period' };
+        const dnsDate = new Date(project.dns_changed_date);
+        const user = users.find(u => u.id === userId);
+        const workSchedule = user ? user.work_schedule : 'US';
+
+        // Calculate 10 working days from DNS change
+        const tenWorkingDaysLater = addWorkingDays(dnsDate, 10, workSchedule);
+
+        // Check if the 10-day mark falls within the evaluation period
+        return tenWorkingDaysLater >= startDate && tenWorkingDaysLater <= endDate;
+    });
+
+    if (relevantProjects.length === 0) {
+        return {
+            achieved: true,
+            total: 0,
+            successful: 0,
+            percentage: 100,
+            details: 'No 10-day compliance checks due in period',
+            period: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
+            breakdown: [],
+            statistics: {
+                'Total 10-Day Checks': 0,
+                'No 10-Day Issues': 0,
+                'Had 10-Day Issues': 0,
+                'Success Rate': '100%',
+                'Target Rate': '100%'
+            },
+            explanation: 'No projects reached their 10-day compliance check during this evaluation period.'
+        };
     }
 
-    const issueProjects = liveProjects.filter(project => project.issues_after_10_days === true);
-    const successful = liveProjects.length - issueProjects.length;
-    const percentage = (successful / liveProjects.length) * 100;
+    const issueProjects = relevantProjects.filter(project => project.issues_after_10_days === true);
+    const successful = relevantProjects.length - issueProjects.length;
+    const percentage = (successful / relevantProjects.length) * 100;
+
+    // Create detailed breakdown
+    const breakdown = relevantProjects.map(project => {
+        const dnsDate = new Date(project.dns_changed_date);
+        const user = users.find(u => u.id === userId);
+        const workSchedule = user ? user.work_schedule : 'US';
+        const tenDayMark = addWorkingDays(dnsDate, 10, workSchedule);
+
+        return {
+            name: project.project_name || `Project ${project.id}`,
+            status: project.issues_after_10_days ? 'Had Issues' : 'No Issues',
+            success: !project.issues_after_10_days,
+            dnsDate: dnsDate.toLocaleDateString(),
+            tenDayMark: tenDayMark.toLocaleDateString(),
+            details: project.issues_after_10_days
+                ? 'Compliance or stability issues were reported after 10 working days'
+                : 'No compliance or stability issues reported after 10 working days',
+            description: `${project.project_name || `Project ${project.id}`} - ${project.issues_after_10_days ? 'Had Issues' : 'No Issues'} (DNS: ${dnsDate.toLocaleDateString()}, 10-day mark: ${tenDayMark.toLocaleDateString()})`
+        };
+    });
+
+    const statistics = {
+        'Total 10-Day Checks': relevantProjects.length,
+        'No 10-Day Issues': successful,
+        'Had 10-Day Issues': issueProjects.length,
+        'Success Rate': `${Math.round(percentage * 100) / 100}%`,
+        'Target Rate': '100%'
+    };
+
+    const explanation = percentage === 100
+        ? `Goal achieved! All ${relevantProjects.length} projects that reached their 10-day compliance check had no issues, meeting the 100% target.`
+        : `Goal not achieved. ${issueProjects.length} out of ${relevantProjects.length} projects had compliance or stability issues after 10 working days (${Math.round(percentage * 100) / 100}% success rate). The target is 100% - no compliance issues should occur after the 10-day monitoring period.`;
 
     return {
         achieved: percentage === 100,
-        total: liveProjects.length,
+        total: relevantProjects.length,
         successful: successful,
         percentage: Math.round(percentage * 100) / 100,
-        details: `${successful}/${liveProjects.length} sites without 10-day issues`
+        details: `${successful}/${relevantProjects.length} projects without 10-day issues`,
+        period: `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
+        breakdown: breakdown,
+        statistics: statistics,
+        explanation: explanation
     };
 }
 
 function evaluateNoReopenedBugsGoal(userId, evaluationDate = new Date()) {
     const { startDate, endDate } = getLastMonthPeriod(evaluationDate);
 
-    // Get projects assigned to user in the period
-    const userProjects = projects.filter(project =>
-        project.assigned_webmaster === userId &&
-        new Date(project.webmaster_assigned_date) >= startDate &&
-        new Date(project.webmaster_assigned_date) <= endDate
-    );
+    // Get projects assigned to user that had bug-related activity in the evaluation period
+    const userProjects = projects.filter(project => {
+        if (project.assigned_webmaster !== userId) return false;
+
+        // Include projects if ANY bug-related activity occurred during the evaluation period
+        const wpBugDate = project.date_finished_wp_bugs ? new Date(project.date_finished_wp_bugs) : null;
+        const pageBugDate = project.date_finished_page_bugs ? new Date(project.date_finished_page_bugs) : null;
+        const goliveBugDate = project.date_finished_golive_bugs ? new Date(project.date_finished_golive_bugs) : null;
+
+        // Check if any bug fix activity occurred in the evaluation period
+        const hasWpBugActivity = wpBugDate && wpBugDate >= startDate && wpBugDate <= endDate;
+        const hasPageBugActivity = pageBugDate && pageBugDate >= startDate && pageBugDate <= endDate;
+        const hasGoliveBugActivity = goliveBugDate && goliveBugDate >= startDate && goliveBugDate <= endDate;
+
+        return hasWpBugActivity || hasPageBugActivity || hasGoliveBugActivity;
+    });
 
     if (userProjects.length === 0) {
-        return { achieved: true, total: 0, successful: 0, percentage: 100, details: 'No projects in period' };
+        return {
+            achieved: true,
+            total: 0,
+            successful: 0,
+            percentage: 100,
+            details: 'No projects in period',
+            period: `${formatDate(startDate)} - ${formatDate(endDate)}`,
+            breakdown: [],
+            statistics: {
+                'Total Projects': 0,
+                'Projects without reopened bugs': 0,
+                'Projects with reopened bugs': 0
+            },
+            explanation: 'No projects had bug-related activity during this evaluation period.'
+        };
     }
+
+    // Create detailed breakdown for each project
+    const breakdown = userProjects.map(project => {
+        const reopenedTypes = [];
+        const bugActivitiesInPeriod = [];
+
+        // Check which bug types were reopened and which activities occurred in period
+        const wpBugDate = project.date_finished_wp_bugs ? new Date(project.date_finished_wp_bugs) : null;
+        const pageBugDate = project.date_finished_page_bugs ? new Date(project.date_finished_page_bugs) : null;
+        const goliveBugDate = project.date_finished_golive_bugs ? new Date(project.date_finished_golive_bugs) : null;
+
+        if (wpBugDate && wpBugDate >= startDate && wpBugDate <= endDate) {
+            bugActivitiesInPeriod.push('WP conversion bugs fixed');
+            if (project.wp_reopened_bugs) reopenedTypes.push('WP conversion');
+        }
+
+        if (pageBugDate && pageBugDate >= startDate && pageBugDate <= endDate) {
+            bugActivitiesInPeriod.push('Page creation bugs fixed');
+            if (project.page_reopened_bugs) reopenedTypes.push('Page creation');
+        }
+
+        if (goliveBugDate && goliveBugDate >= startDate && goliveBugDate <= endDate) {
+            bugActivitiesInPeriod.push('Golive bugs fixed');
+            if (project.golive_reopened_bugs) reopenedTypes.push('Golive');
+        }
+
+        const hasReopenedBugs = reopenedTypes.length > 0;
+        const activitiesText = bugActivitiesInPeriod.join(', ');
+
+        return {
+            projectId: project.id,
+            projectName: project.project_name,
+            status: !hasReopenedBugs,
+            success: !hasReopenedBugs,
+            ticketLink: project.ticket_link,
+            description: hasReopenedBugs
+                ? `${project.project_name} - ${activitiesText} (${reopenedTypes.join(', ')} had reopened bugs)`
+                : `${project.project_name} - ${activitiesText} (no reopened bugs)`
+        };
+    });
 
     const reopenedProjects = userProjects.filter(project =>
         project.wp_reopened_bugs === true ||
@@ -1917,7 +2223,17 @@ function evaluateNoReopenedBugsGoal(userId, evaluationDate = new Date()) {
         total: userProjects.length,
         successful: successful,
         percentage: Math.round(percentage * 100) / 100,
-        details: `${successful}/${userProjects.length} projects without reopened bugs`
+        details: `${successful}/${userProjects.length} projects without reopened bugs`,
+        period: `${formatDate(startDate)} - ${formatDate(endDate)}`,
+        breakdown: breakdown,
+        statistics: {
+            'Total Projects': userProjects.length,
+            'Projects without reopened bugs': successful,
+            'Projects with reopened bugs': reopenedProjects.length
+        },
+        explanation: percentage === 100
+            ? 'All projects with bug-fixing activity completed without any reopened bugs across WP conversion, page creation, and golive phases.'
+            : `${reopenedProjects.length} out of ${userProjects.length} projects with bug-fixing activity had reopened bugs, preventing achievement of this goal.`
     };
 }
 
@@ -1934,60 +2250,145 @@ function evaluatePageBugFixTimeGoal(userId, workSchedule, evaluationDate = new D
     );
 
     if (bugProjects.length === 0) {
-        return { achieved: true, total: 0, successful: 0, percentage: 100, details: 'No page bugs in period' };
+        return {
+            achieved: true,
+            total: 0,
+            successful: 0,
+            percentage: 100,
+            details: 'No page bugs in period',
+            period: `${formatDate(startDate)} - ${formatDate(endDate)}`,
+            breakdown: [],
+            statistics: {
+                totalBugFixes: 0,
+                onTimeFixes: 0,
+                delayedFixes: 0,
+                averageDays: 0,
+                longestDelay: 0
+            },
+            explanation: 'No page creation bugs were found in this period, so the goal is automatically achieved.'
+        };
     }
 
     let successful = 0;
+    let totalDays = 0;
+    let maxDays = 0;
+    const breakdown = [];
+
     bugProjects.forEach(project => {
         const qaDate = new Date(project.date_finished_page_qa);
         const bugFixDate = new Date(project.date_finished_page_bugs);
         const workingDaysBetween = getWorkingDaysBetween(qaDate, bugFixDate, workSchedule);
 
-        if (workingDaysBetween <= 3) {
+        totalDays += workingDaysBetween;
+        maxDays = Math.max(maxDays, workingDaysBetween);
+
+        const onTime = workingDaysBetween <= 3;
+        if (onTime) {
             successful++;
         }
+
+        breakdown.push({
+            projectId: project.id,
+            projectName: project.project_name || 'Unnamed Project',
+            qaDate: formatDate(qaDate),
+            bugFixDate: formatDate(bugFixDate),
+            workingDays: workingDaysBetween,
+            onTime: onTime,
+            status: onTime ? 'On Time' : 'Delayed',
+            target: '3 working days',
+            success: onTime,
+            ticketLink: project.ticket_link,
+            description: `${project.project_name || 'Unnamed Project'} - ${onTime ? 'On Time' : 'Delayed'} (${workingDaysBetween} days, QA: ${formatDate(qaDate)}, Fixed: ${formatDate(bugFixDate)})`
+        });
     });
 
     const percentage = (successful / bugProjects.length) * 100;
+    const averageDays = totalDays / bugProjects.length;
+    const achieved = percentage === 100;
+
+    const explanation = achieved
+        ? `Excellent! All ${bugProjects.length} page bug fixes were completed within the 3 working day target. This demonstrates strong bug resolution efficiency and attention to quality.`
+        : `${bugProjects.length - successful} out of ${bugProjects.length} page bug fixes exceeded the 3 working day target. Focus on quicker bug identification and resolution to improve response time.`;
 
     return {
-        achieved: percentage === 100,
+        achieved: achieved,
         total: bugProjects.length,
         successful: successful,
         percentage: Math.round(percentage * 100) / 100,
-        details: `${successful}/${bugProjects.length} bug fixes completed within 3 working days`
+        details: `${successful}/${bugProjects.length} bug fixes completed within 3 working days`,
+        period: `${formatDate(startDate)} - ${formatDate(endDate)}`,
+        breakdown: breakdown,
+        statistics: {
+            totalBugFixes: bugProjects.length,
+            onTimeFixes: successful,
+            delayedFixes: bugProjects.length - successful,
+            averageDays: Math.round(averageDays * 10) / 10,
+            longestDelay: maxDays
+        },
+        explanation: explanation
     };
 }
 
-// Biweekly Goal Evaluation Functions
 function evaluateTaskUpdateGoal(userId, workSchedule, evaluationDate = new Date()) {
     const { startDate, endDate } = getLastTwoWeeksPeriod(evaluationDate);
 
-    // Get all tasks for projects assigned to user in the period
+    // Get all tasks for projects assigned to user where task update activity occurred in the period
     const userProjectIds = projects
         .filter(project => project.assigned_webmaster === userId)
         .map(project => project.id);
 
-    const userTasks = tasks.filter(task =>
-        userProjectIds.includes(task.project_id) &&
-        task.sent_date &&
-        new Date(task.sent_date) >= startDate &&
-        new Date(task.sent_date) <= endDate
-    );
+    const userTasks = tasks.filter(task => {
+        if (!userProjectIds.includes(task.project_id) || !task.sent_date) return false;
+
+        const sentDate = new Date(task.sent_date);
+        const updatedDate = task.ticket_updated_date ? new Date(task.ticket_updated_date) : null;
+        const completedDate = task.completed_date ? new Date(task.completed_date) : null;
+
+        // Include tasks where the sent date OR update/completion date falls in the period
+        const sentInPeriod = sentDate >= startDate && sentDate <= endDate;
+        const updatedInPeriod = updatedDate && updatedDate >= startDate && updatedDate <= endDate;
+        const completedInPeriod = completedDate && completedDate >= startDate && completedDate <= endDate;
+
+        return sentInPeriod || updatedInPeriod || completedInPeriod;
+    });
 
     if (userTasks.length === 0) {
-        return { achieved: true, total: 0, successful: 0, percentage: 100, details: 'No tasks assigned in period' };
+        return {
+            achieved: true,
+            total: 0,
+            successful: 0,
+            percentage: 100,
+            details: 'No tasks assigned in period',
+            period: `${formatDate(startDate)} - ${formatDate(endDate)}`,
+            breakdown: [],
+            statistics: {
+                totalTasks: 0,
+                timelyUpdates: 0,
+                lateUpdates: 0,
+                averageDays: 0,
+                longestDelay: 0
+            },
+            explanation: 'No tasks were assigned in this period, so the goal is automatically achieved.'
+        };
     }
 
     let successful = 0;
+    let totalDays = 0;
+    let maxDays = 0;
+    const breakdown = [];
+
     userTasks.forEach(task => {
         const sentDate = new Date(task.sent_date);
         let achievedTimeliness = false;
+        let updateDays = null;
+        let updateType = 'None';
 
         // Check if ticket was updated within 2 working days
         if (task.ticket_updated_date) {
             const updatedDate = new Date(task.ticket_updated_date);
             const workingDaysBetween = getWorkingDaysBetween(sentDate, updatedDate, workSchedule);
+            updateDays = workingDaysBetween;
+            updateType = 'Updated';
             if (workingDaysBetween <= 2) {
                 achievedTimeliness = true;
             }
@@ -1997,44 +2398,117 @@ function evaluateTaskUpdateGoal(userId, workSchedule, evaluationDate = new Date(
         if (!achievedTimeliness && task.completed_date) {
             const completedDate = new Date(task.completed_date);
             const workingDaysBetween = getWorkingDaysBetween(sentDate, completedDate, workSchedule);
+            if (updateDays === null) {
+                updateDays = workingDaysBetween;
+                updateType = 'Completed';
+            }
             if (workingDaysBetween <= 2) {
                 achievedTimeliness = true;
             }
         }
 
+        // If neither updated nor completed, calculate days since sent
+        if (updateDays === null) {
+            updateDays = getWorkingDaysBetween(sentDate, evaluationDate, workSchedule);
+            updateType = 'No Update';
+        }
+
+        totalDays += updateDays;
+        maxDays = Math.max(maxDays, updateDays);
+
         if (achievedTimeliness) {
             successful++;
         }
+
+        const project = projects.find(p => p.id === task.project_id);
+        breakdown.push({
+            taskId: task.id,
+            projectName: project ? (project.project_name || `Project ${project.id}`) : 'Unknown Project',
+            taskDescription: task.task_name || task.description || 'No description',
+            sentDate: formatDate(sentDate),
+            updateType: updateType,
+            workingDays: updateDays,
+            onTime: achievedTimeliness,
+            status: achievedTimeliness ? 'On Time' : 'Late',
+            target: '2 working days',
+            description: `${project ? (project.project_name || `Project ${project.id}`) : 'Unknown Project'} - ${task.task_name || task.description || 'Task'} - ${achievedTimeliness ? 'On Time' : 'Late'} (${updateDays} days, ${updateType})`
+        });
     });
 
     const percentage = (successful / userTasks.length) * 100;
+    const averageDays = totalDays / userTasks.length;
+    const achieved = percentage === 100;
+
+    const explanation = achieved
+        ? `Perfect! All ${userTasks.length} tasks were updated or completed within the 2 working day target. This shows excellent communication and task management.`
+        : `${userTasks.length - successful} out of ${userTasks.length} tasks were not updated or completed within the 2 working day target. Prioritize quicker response times and regular status updates.`;
 
     return {
-        achieved: percentage === 100,
+        achieved: achieved,
         total: userTasks.length,
         successful: successful,
         percentage: Math.round(percentage * 100) / 100,
-        details: `${successful}/${userTasks.length} tasks updated or completed within 2 working days`
+        details: `${successful}/${userTasks.length} tasks updated or completed within 2 working days`,
+        period: `${formatDate(startDate)} - ${formatDate(endDate)}`,
+        breakdown: breakdown,
+        statistics: {
+            totalTasks: userTasks.length,
+            timelyUpdates: successful,
+            lateUpdates: userTasks.length - successful,
+            averageDays: Math.round(averageDays * 10) / 10,
+            longestDelay: maxDays
+        },
+        explanation: explanation
     };
 }
 
 function evaluateDesignCompletionGoal(userId, workSchedule, evaluationDate = new Date()) {
     const { startDate, endDate } = getLastTwoWeeksPeriod(evaluationDate);
 
-    // Get projects assigned to user in the period
-    const userProjects = projects.filter(project =>
-        project.assigned_webmaster === userId &&
-        project.webmaster_assigned_date &&
-        new Date(project.webmaster_assigned_date) >= startDate &&
-        new Date(project.webmaster_assigned_date) <= endDate
-    );
+    // Get projects where WP conversion activity or target evaluation occurred in the period
+    const userProjects = projects.filter(project => {
+        if (project.assigned_webmaster !== userId || !project.target_date) return false;
+
+        const targetDate = new Date(project.target_date);
+        const qaDate = project.date_sent_to_wp_qa ? new Date(project.date_sent_to_wp_qa) : null;
+
+        // Include if QA date falls in period OR target date falls in period
+        const qaInPeriod = qaDate && qaDate >= startDate && qaDate <= endDate;
+        const targetInPeriod = targetDate >= startDate && targetDate <= endDate;
+
+        return qaInPeriod || targetInPeriod;
+    });
 
     if (userProjects.length === 0) {
-        return { achieved: true, total: 0, successful: 0, percentage: 100, details: 'No projects assigned in period' };
+        return {
+            achieved: true,
+            total: 0,
+            successful: 0,
+            percentage: 100,
+            details: 'No WP conversion targets due in period',
+            period: `${formatDate(startDate)} - ${formatDate(endDate)}`,
+            breakdown: [],
+            statistics: {
+                totalProjects: 0,
+                onTimeProjects: 0,
+                delayedProjects: 0,
+                completedProjects: 0,
+                pendingProjects: 0
+            },
+            explanation: 'No WP conversion target dates or completions occurred during this evaluation period.'
+        };
     }
 
     let successful = 0;
+    let completed = 0;
+    let pending = 0;
+    const breakdown = [];
+
     userProjects.forEach(project => {
+        let onTrack = false;
+        let status = 'No Target Date';
+        let daysDiff = null;
+
         if (project.target_date) {
             const targetDate = new Date(project.target_date);
             const today = new Date(evaluationDate);
@@ -2042,33 +2516,74 @@ function evaluateDesignCompletionGoal(userId, workSchedule, evaluationDate = new
             if (project.date_sent_to_wp_qa) {
                 // Project was sent to QA - check if it was on time
                 const qaDate = new Date(project.date_sent_to_wp_qa);
+                daysDiff = getWorkingDaysBetween(qaDate, targetDate, workSchedule);
+                completed++;
+
                 if (qaDate <= targetDate) {
-                    successful++;
+                    onTrack = true;
+                    status = daysDiff >= 0 ? `On Time (${daysDiff} days early)` : `On Time`;
+                } else {
+                    status = `Late (${Math.abs(daysDiff)} days)`;
                 }
-                // If sent after target date, it's not successful (already handled by not incrementing)
             } else {
-                // Project not yet sent to QA - only consider it failed if target date has passed
+                // Project not yet sent to QA - check if target date has passed
+                daysDiff = getWorkingDaysBetween(today, targetDate, workSchedule);
+                pending++;
+
                 if (today <= targetDate) {
                     // Target date hasn't passed yet, so it's still on track
-                    successful++;
+                    onTrack = true;
+                    status = `On Track (${daysDiff} days remaining)`;
+                } else {
+                    status = `Overdue (${Math.abs(daysDiff)} days)`;
                 }
-                // If today > targetDate and not sent to QA, it's failed (not incremented)
             }
+        } else {
+            // If no target date, consider as successful to avoid penalizing
+            onTrack = true;
+            status = 'No Target Date Set';
         }
-        // If no target date, we can't evaluate it (consider as successful to avoid penalizing)
-        else {
+
+        if (onTrack) {
             successful++;
         }
+
+        breakdown.push({
+            projectId: project.id,
+            projectName: project.project_name || 'Unnamed Project',
+            assignedDate: project.webmaster_assigned_date ? formatDate(new Date(project.webmaster_assigned_date)) : 'Not Assigned',
+            targetDate: project.target_date ? formatDate(new Date(project.target_date)) : 'Not Set',
+            qaDate: project.date_sent_to_wp_qa ? formatDate(new Date(project.date_sent_to_wp_qa)) : 'Not Sent',
+            onTrack: onTrack,
+            status: status,
+            isCompleted: !!project.date_sent_to_wp_qa,
+            description: `${project.project_name || 'Unnamed Project'} - ${status} (Target: ${project.target_date ? formatDate(new Date(project.target_date)) : 'Not Set'}, QA: ${project.date_sent_to_wp_qa ? formatDate(new Date(project.date_sent_to_wp_qa)) : 'Not Sent'})`
+        });
     });
 
     const percentage = (successful / userProjects.length) * 100;
+    const achieved = percentage === 100;
+
+    const explanation = achieved
+        ? `Excellent! All ${userProjects.length} assigned projects are on track or completed by their target dates. This demonstrates strong project management and design completion efficiency.`
+        : `${userProjects.length - successful} out of ${userProjects.length} projects are behind schedule or completed late. Focus on better timeline estimation and earlier identification of potential delays.`;
 
     return {
-        achieved: percentage === 100,
+        achieved: achieved,
         total: userProjects.length,
         successful: successful,
         percentage: Math.round(percentage * 100) / 100,
-        details: `${successful}/${userProjects.length} designs on track or completed by target date`
+        details: `${successful}/${userProjects.length} designs on track or completed by target date`,
+        period: `${formatDate(startDate)} - ${formatDate(endDate)}`,
+        breakdown: breakdown,
+        statistics: {
+            totalProjects: userProjects.length,
+            onTimeProjects: successful,
+            delayedProjects: userProjects.length - successful,
+            completedProjects: completed,
+            pendingProjects: pending
+        },
+        explanation: explanation
     };
 }
 
@@ -2229,17 +2744,121 @@ function renderGoalTrackingTab() {
 function renderGoalCard(title, goalResult) {
     const statusClass = goalResult.achieved ? 'achieved' : 'not-achieved';
     const statusIcon = goalResult.achieved ? '✅' : '❌';
+    const cardId = `goal-card-${Math.random().toString(36).substr(2, 9)}`;
+    const detailsId = `goal-details-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Generate detailed breakdown
+    let detailedBreakdown = '';
+    if (goalResult.breakdown && goalResult.breakdown.length > 0) {
+        detailedBreakdown = `
+            <div class="goal-breakdown">
+                <h5>Detailed Breakdown:</h5>
+                <ul class="breakdown-list">
+                    ${goalResult.breakdown.map(item => {
+                        // Find the project to get ticket link
+                        const project = projects.find(p => p.id === item.projectId || p.project_name === item.projectName);
+                        const ticketLink = project && project.ticket_link ? project.ticket_link : null;
+
+                        // Create clickable project name if ticket link exists
+                        let projectNameHtml = item.projectName || 'Unknown Project';
+                        if (ticketLink) {
+                            projectNameHtml = `<a href="${ticketLink}" target="_blank" class="project-link">${projectNameHtml}</a>`;
+                        }
+
+                        // Replace project name in description with clickable version
+                        let description = item.description || item.details || 'No description available';
+                        if (item.projectName && ticketLink) {
+                            description = description.replace(item.projectName, projectNameHtml);
+                        }
+
+                        return `
+                            <li class="breakdown-item ${item.status || item.success ? 'success' : 'failure'}">
+                                <span class="breakdown-icon">${item.status || item.success ? '✅' : '❌'}</span>
+                                <span class="breakdown-text">${description}</span>
+                            </li>
+                        `;
+                    }).join('')}
+                </ul>
+            </div>
+        `;
+    }
+
+    // Generate period information
+    let periodInfo = '';
+    if (goalResult.period) {
+        periodInfo = `
+            <div class="goal-period">
+                <strong>Evaluation Period:</strong> ${goalResult.period}
+            </div>
+        `;
+    }
+
+    // Generate statistics
+    let statisticsInfo = '';
+    if (goalResult.statistics) {
+        statisticsInfo = `
+            <div class="goal-statistics">
+                <h5>Statistics:</h5>
+                ${Object.entries(goalResult.statistics).map(([key, value]) => `
+                    <div class="stat-item">
+                        <span class="stat-label">${key}:</span>
+                        <span class="stat-value">${value}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
 
     return `
-        <div class="goal-card ${statusClass}">
-            <div class="goal-header">
+        <div class="goal-card ${statusClass}" id="${cardId}">
+            <div class="goal-header" onclick="toggleGoalDetails('${detailsId}')">
                 <span class="goal-title">${title}</span>
-                <span class="goal-status">${statusIcon}</span>
+                <div class="goal-header-right">
+                    <span class="goal-status">${statusIcon}</span>
+                    <span class="goal-expand-icon">
+                        <i class="fas fa-chevron-down"></i>
+                    </span>
+                </div>
             </div>
             <div class="goal-details">
                 <div class="goal-percentage">${goalResult.percentage}%</div>
                 <div class="goal-description">${goalResult.details}</div>
             </div>
+            <div class="goal-details-expanded" id="${detailsId}" style="display: none;">
+                ${periodInfo}
+                ${statisticsInfo}
+                ${detailedBreakdown}
+                ${goalResult.explanation ? `
+                    <div class="goal-explanation">
+                        <h5>${goalResult.achieved ? 'Why Goal Was Achieved:' : 'Why Goal Was Not Achieved:'}</h5>
+                        <p>${goalResult.explanation}</p>
+                    </div>
+                ` : ''}
+            </div>
         </div>
     `;
+}
+
+// Toggle goal card details
+function toggleGoalDetails(detailsId) {
+    const detailsElement = document.getElementById(detailsId);
+    const isVisible = detailsElement.style.display !== 'none';
+
+    if (isVisible) {
+        detailsElement.style.display = 'none';
+        // Find the expand icon and rotate it back
+        const card = detailsElement.closest('.goal-card');
+        const expandIcon = card.querySelector('.goal-expand-icon i');
+        if (expandIcon) {
+            expandIcon.style.transform = 'rotate(0deg)';
+        }
+    } else {
+        detailsElement.style.display = 'block';
+        // Find the expand icon and rotate it
+        const card = detailsElement.closest('.goal-card');
+        const expandIcon = card.querySelector('.goal-expand-icon i');
+        if (expandIcon) {
+            expandIcon.style.transform = 'rotate(180deg)';
+        }
+    }
 }
