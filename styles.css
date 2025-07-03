@@ -89,6 +89,9 @@ body {
     align-items: center;
     gap: 15px;
 }
+.goals-header{
+    color: #000;
+}
 
 .user-info {
     font-weight: 500;

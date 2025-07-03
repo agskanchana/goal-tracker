@@ -450,6 +450,8 @@ function switchTab(tabName) {
 // Projects Functions
 async function loadProjects() {
     try {
+        let allProjects = [];
+
         if (supabase) {
             const { data, error } = await supabase
                 .from('projects')
@@ -460,13 +462,24 @@ async function loadProjects() {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            projects = data;
+            allProjects = data;
         } else {
             // Demo mode - use local data
-            projects = demoData.projects.map(project => ({
+            allProjects = demoData.projects.map(project => ({
                 ...project,
                 users: users.find(u => u.id === project.assigned_webmaster)
             }));
+        }
+
+        // Filter projects based on user role
+        if (currentUser.role === 'manager') {
+            // Managers can see all projects
+            projects = allProjects;
+        } else {
+            // Non-managers can only see projects assigned to them
+            projects = allProjects.filter(project =>
+                project.assigned_webmaster === currentUser.id
+            );
         }
 
         renderProjects();
@@ -479,11 +492,35 @@ function renderProjects() {
     const grid = document.getElementById('projectsGrid');
 
     if (projects.length === 0) {
-        grid.innerHTML = '<div class="no-data">No projects found</div>';
+        let noDataMessage;
+        if (currentUser.role === 'manager') {
+            noDataMessage = 'No projects found in the system';
+        } else {
+            noDataMessage = 'No projects assigned to you';
+        }
+        grid.innerHTML = `<div class="no-data">${noDataMessage}</div>`;
         return;
     }
 
-    grid.innerHTML = projects.map(project => `
+    // Add header based on user role
+    let headerInfo = '';
+    if (currentUser.role === 'manager') {
+        headerInfo = `
+            <div class="projects-header">
+                <h2>All Projects</h2>
+                <p>Viewing all projects in the system (${projects.length} total)</p>
+            </div>
+        `;
+    } else {
+        headerInfo = `
+            <div class="projects-header">
+                <h2>My Assigned Projects</h2>
+                <p>Projects assigned to you (${projects.length} total)</p>
+            </div>
+        `;
+    }
+
+    grid.innerHTML = headerInfo + projects.map(project => `
         <div class="project-card">
             <div class="project-header">
                 <div>
@@ -562,6 +599,18 @@ async function openProjectModal(projectId = null) {
     if (projectId) {
         title.textContent = 'Edit Project';
         const project = projects.find(p => p.id === projectId);
+
+        // Check if user has permission to access this project
+        if (!project) {
+            showErrorMessage('Project not found or you do not have permission to access it');
+            return;
+        }
+
+        if (currentUser.role !== 'manager' && project.assigned_webmaster !== currentUser.id) {
+            showErrorMessage('You can only access projects assigned to you');
+            return;
+        }
+
         populateProjectForm(project);
 
         // Set current project ID and load tasks
@@ -1071,19 +1120,27 @@ function renderUsers() {
                     <span class="project-info-value">${user.work_schedule}</span>
                 </div>
             </div>
-            <div class="user-actions">
-                <button class="btn btn-primary btn-sm" onclick="editUser(${user.id})">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
-            </div>
+            ${currentUser.role === 'manager' ? `
+                <div class="user-actions">
+                    <button class="btn btn-primary btn-sm" onclick="editUser(${user.id})">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            ` : ''}
         </div>
     `).join('');
 }
 
 function openUserModal(userId = null) {
+    // Check if user has permission to manage users
+    if (currentUser.role !== 'manager') {
+        showErrorMessage('Only managers can add or edit users');
+        return;
+    }
+
     const modal = document.getElementById('userModal');
     const title = document.getElementById('userModalTitle');
     const form = document.getElementById('userForm');
@@ -1092,9 +1149,13 @@ function openUserModal(userId = null) {
         title.textContent = 'Edit User';
         const user = users.find(u => u.id === userId);
         populateUserForm(user);
+        // Store the user ID for editing
+        form.dataset.editingUserId = userId;
     } else {
         title.textContent = 'Add User';
         form.reset();
+        // Remove any editing user ID
+        delete form.dataset.editingUserId;
     }
 
     modal.classList.add('active');
@@ -1111,36 +1172,68 @@ function populateUserForm(user) {
 async function handleUserSubmit(e) {
     e.preventDefault();
 
+    // Check if user has permission to manage users
+    if (currentUser.role !== 'manager') {
+        showErrorMessage('Only managers can add or edit users');
+        return;
+    }
+
+    const form = e.target;
+    const editingUserId = form.dataset.editingUserId;
+
     const userData = {
         name: document.getElementById('userName').value,
         email: document.getElementById('userEmail').value,
         role: document.getElementById('userRole').value,
-        work_schedule: document.getElementById('workSchedule').value,
-        password: document.getElementById('userPassword').value
+        work_schedule: document.getElementById('workSchedule').value
     };
 
-    try {
-        if (supabase) {
-            // In real implementation, you'd hash the password and create auth user
-            const { data, error } = await supabase
-                .from('users')
-                .insert([userData]);
+    // Only include password if it's provided (for new users or password changes)
+    const passwordField = document.getElementById('userPassword').value;
+    if (passwordField) {
+        userData.password = passwordField;
+    }
 
-            if (error) throw error;
+    try {
+        const isEditing = !!editingUserId;
+
+        if (supabase) {
+            if (isEditing) {
+                const { data, error } = await supabase
+                    .from('users')
+                    .update(userData)
+                    .eq('id', editingUserId);
+
+                if (error) throw error;
+            } else {
+                // In real implementation, you'd hash the password and create auth user
+                const { data, error } = await supabase
+                    .from('users')
+                    .insert([userData]);
+
+                if (error) throw error;
+            }
         } else {
             // Demo mode
-            const newUser = {
-                ...userData,
-                id: Date.now(),
-                created_at: new Date().toISOString()
-            };
-            users.push(newUser);
+            if (isEditing) {
+                const index = users.findIndex(u => u.id == editingUserId);
+                if (index > -1) {
+                    users[index] = { ...users[index], ...userData };
+                }
+            } else {
+                const newUser = {
+                    ...userData,
+                    id: Date.now(),
+                    created_at: new Date().toISOString()
+                };
+                users.push(newUser);
+            }
         }
 
         closeModals();
         await loadUsers();
         loadWebmastersIntoSelect(); // Refresh webmaster dropdown
-        showSuccessMessage('User saved successfully!');
+        showSuccessMessage(isEditing ? 'User updated successfully!' : 'User added successfully!');
 
     } catch (error) {
         console.error('Error saving user:', error);
@@ -1149,10 +1242,22 @@ async function handleUserSubmit(e) {
 }
 
 function editUser(userId) {
+    // Check if user has permission to edit users
+    if (currentUser.role !== 'manager') {
+        showErrorMessage('Only managers can edit users');
+        return;
+    }
+
     openUserModal(userId);
 }
 
 async function deleteUser(userId) {
+    // Check if user has permission to delete users
+    if (currentUser.role !== 'manager') {
+        showErrorMessage('Only managers can delete users');
+        return;
+    }
+
     if (!confirm('Are you sure you want to delete this user?')) {
         return;
     }
@@ -1611,7 +1716,10 @@ function getNextBiweeklyGoalDate() {
 }
 
 function getLastMonthPeriod(evaluationDate = new Date()) {
-    const endDate = new Date(evaluationDate.getFullYear(), evaluationDate.getMonth(), 10);
+    // End date is today (or the evaluation date)
+    const endDate = new Date(evaluationDate);
+
+    // Start date is 1 month back from today
     const startDate = new Date(endDate);
     startDate.setMonth(startDate.getMonth() - 1);
 
@@ -1619,7 +1727,10 @@ function getLastMonthPeriod(evaluationDate = new Date()) {
 }
 
 function getLastTwoWeeksPeriod(evaluationDate = new Date()) {
+    // End date is today (or the evaluation date)
     const endDate = new Date(evaluationDate);
+
+    // Start date is 2 weeks (14 days) back from today
     const startDate = new Date(endDate);
     startDate.setDate(startDate.getDate() - 14);
 
@@ -1915,7 +2026,20 @@ async function calculateGoalsForUser(userId) {
 }
 
 async function calculateAllGoals() {
-    const webmasters = users.filter(u => u.role.includes('webmaster'));
+    let webmasters;
+
+    if (currentUser.role === 'manager') {
+        // Managers can see all webmasters' goals
+        webmasters = users.filter(u => u.role.includes('webmaster'));
+    } else {
+        // Non-managers can only see their own goals if they are webmasters
+        if (currentUser.role.includes('webmaster')) {
+            webmasters = [currentUser];
+        } else {
+            webmasters = [];
+        }
+    }
+
     const allGoals = [];
 
     for (const webmaster of webmasters) {
@@ -1935,11 +2059,37 @@ function renderGoalTrackingTab() {
         if (!container) return;
 
         if (allGoals.length === 0) {
-            container.innerHTML = '<div class="no-data">No webmasters found for goal tracking</div>';
+            let noDataMessage;
+            if (currentUser.role === 'manager') {
+                noDataMessage = 'No webmasters found for goal tracking';
+            } else if (currentUser.role.includes('webmaster')) {
+                noDataMessage = 'No goal data available for your account';
+            } else {
+                noDataMessage = 'Goal tracking is only available for webmasters';
+            }
+            container.innerHTML = `<div class="no-data">${noDataMessage}</div>`;
             return;
         }
 
-        container.innerHTML = allGoals.map(userGoals => `
+        // Add header based on user role
+        let headerInfo = '';
+        if (currentUser.role === 'manager') {
+            headerInfo = `
+                <div class="goals-header">
+                    <h2>Goal Tracking - All Team Members</h2>
+                    <p>Viewing goals for all webmasters in the system</p>
+                </div>
+            `;
+        } else {
+            headerInfo = `
+                <div class="goals-header">
+                    <h2>My Goal Tracking</h2>
+                    <p>Your personal goal performance and metrics</p>
+                </div>
+            `;
+        }
+
+        container.innerHTML = headerInfo + allGoals.map(userGoals => `
             <div class="goal-user-section">
                 <div class="goal-user-header">
                     <h3>${userGoals.user.name} (${formatRole(userGoals.user.role)})</h3>
