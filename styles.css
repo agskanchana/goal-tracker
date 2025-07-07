@@ -1368,3 +1368,26 @@ body.role-webmaster_level_2 .webmaster-only {
     font-size: 13px;
 }
 
+/* View-only mode styling */
+.modal.view-only-mode .modal-header h3 {
+    color: #6c757d;
+}
+
+.modal.view-only-mode .modal-header h3:before {
+    content: "👁️ ";
+    margin-right: 8px;
+}
+
+.modal.view-only-mode input:disabled,
+.modal.view-only-mode select:disabled,
+.modal.view-only-mode textarea:disabled {
+    background-color: #f8f9fa;
+    border-color: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.modal.view-only-mode .form-section {
+    opacity: 0.8;
+}
+

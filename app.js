@@ -722,6 +722,28 @@ async function openProjectModal(projectId = null) {
     const title = document.getElementById('projectModalTitle');
     const form = document.getElementById('projectForm');
 
+    // Reset modal state (remove view-only mode)
+    modal.classList.remove('view-only-mode');
+
+    // Re-enable all form elements and show submit button
+    const inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        input.disabled = false;
+        input.readOnly = false;
+    });
+
+    const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton) {
+        submitButton.style.display = '';
+    }
+
+    // Remove any existing submit event listeners
+    const newForm = form.cloneNode(true);
+    form.parentNode.replaceChild(newForm, form);
+
+    // Re-add the form submit listener
+    document.getElementById('projectForm').addEventListener('submit', handleProjectSubmit);
+
     if (projectId) {
         title.textContent = 'Edit Project';
         const project = projects.find(p => p.id === projectId);
@@ -878,6 +900,16 @@ function populateProjectForm(project) {
 async function handleProjectSubmit(e) {
     e.preventDefault();
 
+    // Check if user has permission to edit projects
+    const title = document.getElementById('projectModalTitle').textContent;
+    const isEditing = title === 'Edit Project';
+
+    // For non-managers, only allow viewing (no submission)
+    if (currentUser.role !== 'manager') {
+        showErrorMessage('You do not have permission to modify project data');
+        return;
+    }
+
     const formData = new FormData(e.target);
     const projectData = {};
 
@@ -1018,12 +1050,39 @@ async function deleteProject(projectId) {
 
 function viewProject(projectId) {
     openProjectModal(projectId);
+
     // Make form read-only for non-managers
-    const form = document.getElementById('projectForm');
-    const inputs = form.querySelectorAll('input, select, textarea');
-    inputs.forEach(input => {
-        input.disabled = true;
-    });
+    if (currentUser.role !== 'manager') {
+        const form = document.getElementById('projectForm');
+        const modal = document.getElementById('projectModal');
+
+        // Disable all inputs, selects, and textareas
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.disabled = true;
+            input.readOnly = true;
+        });
+
+        // Hide the submit button and show only cancel
+        const submitButton = form.querySelector('button[type="submit"]');
+        if (submitButton) {
+            submitButton.style.display = 'none';
+        }
+
+        // Change modal title to indicate view-only mode
+        const title = document.getElementById('projectModalTitle');
+        title.textContent = 'View Project (Read Only)';
+
+        // Add view-only class for additional styling
+        modal.classList.add('view-only-mode');
+
+        // Prevent form submission entirely
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            showErrorMessage('This project is in view-only mode');
+            return false;
+        });
+    }
 }
 
 // Tasks Functions
@@ -1126,6 +1185,12 @@ function renderTasks(projectTasks) {
 }
 
 function openTaskModal(taskId = null) {
+    // Check if user has permission to manage tasks
+    if (currentUser.role !== 'manager') {
+        showErrorMessage('Only managers can add or edit tasks');
+        return;
+    }
+
     const modal = document.getElementById('taskModal');
     const title = document.getElementById('taskModalTitle');
     const form = document.getElementById('taskForm');
@@ -1182,6 +1247,12 @@ function populateTaskForm(task) {
 
 async function handleTaskSubmit(e) {
     e.preventDefault();
+
+    // Check if user has permission to manage tasks
+    if (currentUser.role !== 'manager') {
+        showErrorMessage('Only managers can add or edit tasks');
+        return;
+    }
 
     if (!currentProjectId) {
         showErrorMessage('No project selected for task creation');
@@ -1259,10 +1330,22 @@ function getCurrentEditingTaskId() {
 }
 
 function editTask(taskId) {
+    // Check if user has permission to edit tasks
+    if (currentUser.role !== 'manager') {
+        showErrorMessage('Only managers can edit tasks');
+        return;
+    }
+
     openTaskModal(taskId);
 }
 
 async function deleteTask(taskId) {
+    // Check if user has permission to delete tasks
+    if (currentUser.role !== 'manager') {
+        showErrorMessage('Only managers can delete tasks');
+        return;
+    }
+
     if (!confirm('Are you sure you want to delete this task?')) {
         return;
     }
