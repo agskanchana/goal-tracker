@@ -729,6 +729,54 @@ async function openProjectModal(projectId = null) {
     } else {
         title.textContent = 'Add Project';
         form.reset();
+
+        // Additional clearing for custom fields to ensure no residual data
+        const fieldMappings = {
+            'project_name': 'projectName',
+            'ticket_link': 'ticketLink',
+            'design_approved_date': 'designApprovedDate',
+            'assigned_webmaster': 'assignedWebmaster',
+            'webmaster_assigned_date': 'webmasterAssignedDate',
+            'target_date': 'targetDate',
+            'project_status': 'projectStatus',
+            'signed_up_date': 'signedUpDate',
+            'contract_start_date': 'contractStartDate',
+            'date_sent_to_wp_qa': 'dateSentToWpQa',
+            'date_finished_wp_qa': 'dateFinishedWpQa',
+            'date_finished_wp_bugs': 'dateFinishedWpBugs',
+            'date_sent_to_page_qa': 'dateSentToPageQa',
+            'date_finished_page_qa': 'dateFinishedPageQa',
+            'date_finished_page_bugs': 'dateFinishedPageBugs',
+            'dns_changed_date': 'dnsChangedDate',
+            'date_sent_to_golive_qa': 'dateSentToGoliveQa',
+            'date_finished_golive_qa': 'dateFinishedGoliveQa',
+            'date_finished_golive_bugs': 'dateFinishedGoliveBugs',
+            'manager_sent_back': 'managerSentBack',
+            'wp_reopened_bugs': 'wpReopenedBugs',
+            'page_reopened_bugs': 'pageReopenedBugs',
+            'golive_reopened_bugs': 'goliveReopenedBugs',
+            'issues_after_8_hours': 'issuesAfter8Hours',
+            'issues_after_10_days': 'issuesAfter10Days',
+            'issues_8_hours_text': 'issues8HoursText',
+            'issues_10_days_text': 'issues10DaysText'
+        };
+
+        // Clear all form fields explicitly
+        Object.values(fieldMappings).forEach(formFieldId => {
+            const input = document.getElementById(formFieldId);
+            if (input) {
+                if (input.type === 'checkbox') {
+                    input.checked = false;
+                } else {
+                    input.value = '';
+                }
+            }
+        });
+
+        // Hide all issue containers
+        toggleIssuesContainer('issues8HoursContainer', false);
+        toggleIssuesContainer('issues10DaysContainer', false);
+
         // Set default dates
         document.getElementById('webmasterAssignedDate').value = new Date().toISOString().split('T')[0];
 
@@ -772,6 +820,23 @@ function populateProjectForm(project) {
         'issues_10_days_text': 'issues10DaysText'
     };
 
+    // First, clear all form fields to prevent data from previous projects
+    Object.values(fieldMappings).forEach(formFieldId => {
+        const input = document.getElementById(formFieldId);
+        if (input) {
+            if (input.type === 'checkbox') {
+                input.checked = false;
+            } else {
+                input.value = '';
+            }
+        }
+    });
+
+    // Hide all issue containers by default
+    toggleIssuesContainer('issues8HoursContainer', false);
+    toggleIssuesContainer('issues10DaysContainer', false);
+
+    // Now populate with actual project data
     Object.keys(project).forEach(dbKey => {
         const formFieldId = fieldMappings[dbKey] || dbKey;
         const input = document.getElementById(formFieldId);
