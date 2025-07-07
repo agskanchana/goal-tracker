@@ -288,7 +288,8 @@ body {
     display: flex;
     gap: 15px;
     margin-bottom: 30px;
-    align-items: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
 }
 
 .filters select,
@@ -302,6 +303,86 @@ body {
 .filters input {
     flex: 1;
     max-width: 300px;
+}
+
+/* Filter group styling */
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0;
+}
+
+.filter-group label {
+    font-weight: 500;
+    color: #333;
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+.filter-group input[type="date"] {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: white;
+    color: #333;
+    min-width: 150px;
+}
+
+.filter-group input[type="date"]:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.filter-group .btn-sm {
+    padding: 4px 8px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.filter-group select {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: white;
+    color: #333;
+    min-width: 150px;
+}
+
+/* Date picker helper text */
+.date-help-text {
+    font-size: 11px;
+    color: #666;
+    margin-top: 2px;
+    font-style: italic;
+    width: 100%;
+    margin-left: 108px;
+}
+
+/* Responsive filter layout */
+@media (max-width: 768px) {
+    .filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+    }
+
+    .filter-group label {
+        min-width: auto;
+    }
+
+    .date-help-text {
+        margin-left: 0;
+        text-align: center;
+    }
 }
 
 /* Projects Grid */
@@ -1269,5 +1350,21 @@ body.role-webmaster_level_2 .webmaster-only {
         align-items: flex-start;
         gap: 5px;
     }
+}
+
+/* Date indicators in goals header */
+.custom-date-indicator {
+    color: #007bff;
+    font-weight: 600;
+    background-color: #e3f2fd;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.current-date-indicator {
+    color: #28a745;
+    font-weight: 500;
+    font-size: 13px;
 }
 

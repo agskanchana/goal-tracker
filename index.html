@@ -109,10 +109,21 @@
                     </button>
                 </div>
 
-                <div class="filters manager-only">
-                    <select id="webmasterFilter">
-                        <option value="">All Webmasters</option>
-                    </select>
+                <div class="filters">
+                    <div class="filter-group manager-only">
+                        <label for="webmasterFilter">Webmaster:</label>
+                        <select id="webmasterFilter">
+                            <option value="">All Webmasters</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="goalEvaluationDate">Evaluation Date:</label>
+                        <input type="date" id="goalEvaluationDate" class="form-control" title="Select a date to evaluate goals as of that date. Monthly goals look back 1 month, biweekly goals look back 2 weeks. Leave blank for today's date.">
+                        <button id="resetGoalDateBtn" class="btn btn-secondary btn-sm" title="Reset to today's date">
+                            <i class="fas fa-refresh"></i> Today
+                        </button>
+                        <small class="date-help-text">Monthly goals look back 1 month, biweekly goals look back 2 weeks from selected date</small>
+                    </div>
                 </div>
 
                 <div id="goalTrackingContent" class="goals-dashboard">

@@ -384,6 +384,23 @@ function setupEventListeners() {
         webmasterFilter.addEventListener('change', renderGoalTrackingTab);
     }
 
+    // Goal evaluation date event listeners
+    const goalEvaluationDate = document.getElementById('goalEvaluationDate');
+    if (goalEvaluationDate) {
+        goalEvaluationDate.addEventListener('change', renderGoalTrackingTab);
+    }
+
+    const resetGoalDateBtn = document.getElementById('resetGoalDateBtn');
+    if (resetGoalDateBtn) {
+        resetGoalDateBtn.addEventListener('click', function() {
+            const dateInput = document.getElementById('goalEvaluationDate');
+            if (dateInput) {
+                dateInput.value = '';
+                renderGoalTrackingTab();
+            }
+        });
+    }
+
     // Holiday calendar event listener
     const holidayYearSelector = document.getElementById('holidayYear');
     if (holidayYearSelector) {
@@ -1903,25 +1920,23 @@ function getWorkingDaysBetween(startDate, endDate, workSchedule) {
     return workingDays;
 }
 
-function getNextMonthlyGoalDate() {
-    const today = new Date();
-    const goalDate = new Date(today.getFullYear(), today.getMonth(), 10);
+function getNextMonthlyGoalDate(evaluationDate = new Date()) {
+    const goalDate = new Date(evaluationDate.getFullYear(), evaluationDate.getMonth(), 10);
 
     // If we're past the 10th of this month, get next month's 10th
-    if (today.getDate() > 10) {
+    if (evaluationDate.getDate() > 10) {
         goalDate.setMonth(goalDate.getMonth() + 1);
     }
 
     return goalDate;
 }
 
-function getNextBiweeklyGoalDate() {
-    const today = new Date();
-    let nextMonday = new Date(today);
+function getNextBiweeklyGoalDate(evaluationDate = new Date()) {
+    let nextMonday = new Date(evaluationDate);
 
     // Find next Monday
-    const daysUntilMonday = (8 - today.getDay()) % 7;
-    nextMonday.setDate(today.getDate() + daysUntilMonday);
+    const daysUntilMonday = (8 - evaluationDate.getDay()) % 7;
+    nextMonday.setDate(evaluationDate.getDate() + daysUntilMonday);
 
     // Check if it's a biweekly Monday (every other Monday)
     // For simplicity, we'll use week number to determine this
@@ -2653,40 +2668,39 @@ function evaluateDesignCompletionGoal(userId, workSchedule, evaluationDate = new
 }
 
 // Main Goal Tracking Function
-async function calculateGoalsForUser(userId) {
+async function calculateGoalsForUser(userId, evaluationDate = new Date()) {
     const user = users.find(u => u.id === userId);
     if (!user) return null;
 
-    const today = new Date();
     const workSchedule = user.work_schedule;
     const userRole = user.role;
 
     // Monthly Goals (evaluated on 10th of each month)
     const monthlyGoals = {
-        designConversion: evaluateDesignConversionGoal(userId, userRole, today),
-        technicalIssues8Hour: evaluate8HourTechnicalGoal(userId, today),
-        compliance10Day: evaluate10DayComplianceGoal(userId, today),
-        noReopenedBugs: evaluateNoReopenedBugsGoal(userId, today),
-        pageBugFixTime: evaluatePageBugFixTimeGoal(userId, workSchedule, today)
+        designConversion: evaluateDesignConversionGoal(userId, userRole, evaluationDate),
+        technicalIssues8Hour: evaluate8HourTechnicalGoal(userId, evaluationDate),
+        compliance10Day: evaluate10DayComplianceGoal(userId, evaluationDate),
+        noReopenedBugs: evaluateNoReopenedBugsGoal(userId, evaluationDate),
+        pageBugFixTime: evaluatePageBugFixTimeGoal(userId, workSchedule, evaluationDate)
     };
 
     // Biweekly Goals (evaluated every other Monday)
     const biweeklyGoals = {
-        taskUpdates: evaluateTaskUpdateGoal(userId, workSchedule, today),
-        designCompletion: evaluateDesignCompletionGoal(userId, workSchedule, today)
+        taskUpdates: evaluateTaskUpdateGoal(userId, workSchedule, evaluationDate),
+        designCompletion: evaluateDesignCompletionGoal(userId, workSchedule, evaluationDate)
     };
 
     return {
         user: user,
-        evaluationDate: today.toISOString().split('T')[0],
-        nextMonthlyEvaluation: getNextMonthlyGoalDate().toISOString().split('T')[0],
-        nextBiweeklyEvaluation: getNextBiweeklyGoalDate().toISOString().split('T')[0],
+        evaluationDate: evaluationDate.toISOString().split('T')[0],
+        nextMonthlyEvaluation: getNextMonthlyGoalDate(evaluationDate).toISOString().split('T')[0],
+        nextBiweeklyEvaluation: getNextBiweeklyGoalDate(evaluationDate).toISOString().split('T')[0],
         monthlyGoals: monthlyGoals,
         biweeklyGoals: biweeklyGoals
     };
 }
 
-async function calculateAllGoals() {
+async function calculateAllGoals(evaluationDate = new Date()) {
     let webmasters;
 
     if (currentUser.role === 'manager') {
@@ -2711,7 +2725,7 @@ async function calculateAllGoals() {
     const allGoals = [];
 
     for (const webmaster of webmasters) {
-        const goals = await calculateGoalsForUser(webmaster.id);
+        const goals = await calculateGoalsForUser(webmaster.id, evaluationDate);
         if (goals) {
             allGoals.push(goals);
         }
@@ -2722,7 +2736,15 @@ async function calculateAllGoals() {
 
 // UI Functions for Goal Tracking
 function renderGoalTrackingTab() {
-    return calculateAllGoals().then(allGoals => {
+    // Get the custom evaluation date from the input field
+    const dateInput = document.getElementById('goalEvaluationDate');
+    let evaluationDate = new Date();
+
+    if (dateInput && dateInput.value) {
+        evaluationDate = new Date(dateInput.value);
+    }
+
+    return calculateAllGoals(evaluationDate).then(allGoals => {
         const container = document.getElementById('goalTrackingContent');
         if (!container) return;
 
@@ -2741,6 +2763,12 @@ function renderGoalTrackingTab() {
 
         // Add header based on user role
         let headerInfo = '';
+        const evaluationDateStr = evaluationDate.toLocaleDateString();
+        const isCustomDate = dateInput && dateInput.value;
+        const dateLabel = isCustomDate
+            ? `<span class="custom-date-indicator">📅 Evaluation Date: ${evaluationDateStr}</span>`
+            : `<span class="current-date-indicator">📅 Current Date: ${evaluationDateStr}</span>`;
+
         if (currentUser.role === 'manager') {
             const webmasterFilter = document.getElementById('webmasterFilter');
             const selectedWebmasterId = webmasterFilter ? webmasterFilter.value : '';
@@ -2750,14 +2778,14 @@ function renderGoalTrackingTab() {
                 headerInfo = `
                     <div class="goals-header">
                         <h2>Goal Tracking - ${selectedWebmaster ? selectedWebmaster.name : 'Selected Webmaster'}</h2>
-                        <p>Viewing goals for the selected webmaster</p>
+                        <p>Viewing goals for the selected webmaster • ${dateLabel}</p>
                     </div>
                 `;
             } else {
                 headerInfo = `
                     <div class="goals-header">
                         <h2>Goal Tracking - All Team Members</h2>
-                        <p>Viewing goals for all webmasters in the system (${allGoals.length} total)</p>
+                        <p>Viewing goals for all webmasters in the system (${allGoals.length} total) • ${dateLabel}</p>
                     </div>
                 `;
             }
@@ -2765,7 +2793,7 @@ function renderGoalTrackingTab() {
             headerInfo = `
                 <div class="goals-header">
                     <h2>My Goal Tracking</h2>
-                    <p>Your personal goal performance and metrics</p>
+                    <p>Your personal goal performance and metrics • ${dateLabel}</p>
                 </div>
             `;
         }
