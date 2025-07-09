@@ -910,6 +910,14 @@ async function handleProjectSubmit(e) {
     const formData = new FormData(e.target);
     const projectData = {};
 
+    // List of date fields that should be explicitly handled
+    const dateFields = [
+        'design_approved_date', 'webmaster_assigned_date', 'target_date', 'signed_up_date',
+        'contract_start_date', 'date_sent_to_wp_qa', 'date_finished_wp_qa', 'date_finished_wp_bugs',
+        'date_sent_to_page_qa', 'date_finished_page_qa', 'date_finished_page_bugs',
+        'dns_changed_date', 'date_sent_to_golive_qa', 'date_finished_golive_qa', 'date_finished_golive_bugs'
+    ];
+
     // Collect all form data
     for (let [key, value] of formData.entries()) {
         // Convert empty strings to null for date fields and other optional fields
@@ -919,6 +927,20 @@ async function handleProjectSubmit(e) {
             projectData[key] = value;
         }
     }
+
+    // Also check date fields directly from the form elements to ensure empty dates are captured as null
+    dateFields.forEach(fieldName => {
+        const element = document.querySelector(`[name="${fieldName}"]`);
+        if (element) {
+            const value = element.value;
+            if (value === '' || value === undefined) {
+                projectData[fieldName] = null;
+            } else if (!projectData.hasOwnProperty(fieldName)) {
+                // Only set if not already set by FormData
+                projectData[fieldName] = value;
+            }
+        }
+    });
 
     // Handle checkboxes separately (they won't be in FormData if unchecked)
     // Map camelCase to snake_case for database
@@ -936,23 +958,43 @@ async function handleProjectSubmit(e) {
         projectData[snakeKey] = document.getElementById(camelKey).checked;
     });
 
+    // Handle text area fields for issues (ensure they're captured even if empty)
+    const issuesText8Hours = document.getElementById('issues8HoursText');
+    const issuesText10Days = document.getElementById('issues10DaysText');
+
+    if (issuesText8Hours) {
+        projectData['issues_8_hours_text'] = issuesText8Hours.value || null;
+    }
+    if (issuesText10Days) {
+        projectData['issues_10_days_text'] = issuesText10Days.value || null;
+    }
+
     // Convert assigned_webmaster to integer if it exists and is not null
     if (projectData.assigned_webmaster && projectData.assigned_webmaster !== null) {
         projectData.assigned_webmaster = parseInt(projectData.assigned_webmaster);
     }
 
-    // Remove any keys with null values for optional fields (let database handle defaults)
-    const requiredFields = ['project_name', 'ticket_link', 'design_approved_date', 'assigned_webmaster', 'webmaster_assigned_date'];
-    Object.keys(projectData).forEach(key => {
-        if (projectData[key] === null && !requiredFields.includes(key)) {
-            delete projectData[key];
-        }
-    });
+    // For new projects, remove null values for optional fields (let database handle defaults)
+    // For existing projects, keep null values to allow clearing fields
+    if (!isEditing) {
+        // Only remove null values for new projects
+        const requiredFields = ['project_name', 'ticket_link', 'design_approved_date', 'assigned_webmaster', 'webmaster_assigned_date'];
+        Object.keys(projectData).forEach(key => {
+            if (projectData[key] === null && !requiredFields.includes(key)) {
+                delete projectData[key];
+            }
+        });
+    }
+    // For editing, keep all null values to allow clearing existing data
 
     try {
         const title = document.getElementById('projectModalTitle').textContent;
         const isEditing = title === 'Edit Project';
         let savedProjectId = currentProjectId;
+
+        // Debug: Log the data being sent to see null values
+        console.log('Project data being saved:', projectData);
+        console.log('Is editing:', isEditing);
 
         if (supabase) {
             if (isEditing) {
