@@ -320,19 +320,16 @@ function setupEventListeners() {
     const addProjectBtn = document.getElementById('addProjectBtn');
     const addUserBtn = document.getElementById('addUserBtn');
     const addLeaveBtn = document.getElementById('addLeaveBtn');
-    const addTaskBtn = document.getElementById('addTaskBtn'); // Add task button
 
     console.log('Add buttons found:', {
         addProjectBtn: !!addProjectBtn,
         addUserBtn: !!addUserBtn,
-        addLeaveBtn: !!addLeaveBtn,
-        addTaskBtn: !!addTaskBtn // Log task button
+        addLeaveBtn: !!addLeaveBtn
     });
 
     if (addProjectBtn) addProjectBtn.addEventListener('click', () => openProjectModal());
     if (addUserBtn) addUserBtn.addEventListener('click', () => openUserModal());
     if (addLeaveBtn) addLeaveBtn.addEventListener('click', () => openLeaveModal());
-    if (addTaskBtn) addTaskBtn.addEventListener('click', () => openTaskModal()); // Task modal
 
     // Cancel buttons
     document.getElementById('cancelProject').addEventListener('click', closeModals);
@@ -411,6 +408,27 @@ function setupEventListeners() {
     window.addEventListener('click', (e) => {
         if (e.target.classList.contains('modal')) {
             closeModals();
+        }
+    });
+
+    // Use event delegation for dynamic buttons
+    document.addEventListener('click', (e) => {
+        // Handle task add button (check for button or icon inside button)
+        const taskBtn = e.target.closest('#addTaskBtn');
+        if (taskBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            openTaskModal();
+            return;
+        }
+
+        // Handle close buttons (check for button or icon inside button)
+        const closeBtn = e.target.closest('.close');
+        if (closeBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeModals();
+            return;
         }
     });
 }
@@ -722,28 +740,6 @@ async function openProjectModal(projectId = null) {
     const title = document.getElementById('projectModalTitle');
     const form = document.getElementById('projectForm');
 
-    // Reset modal state (remove view-only mode)
-    modal.classList.remove('view-only-mode');
-
-    // Re-enable all form elements and show submit button
-    const inputs = form.querySelectorAll('input, select, textarea');
-    inputs.forEach(input => {
-        input.disabled = false;
-        input.readOnly = false;
-    });
-
-    const submitButton = form.querySelector('button[type="submit"]');
-    if (submitButton) {
-        submitButton.style.display = '';
-    }
-
-    // Remove any existing submit event listeners
-    const newForm = form.cloneNode(true);
-    form.parentNode.replaceChild(newForm, form);
-
-    // Re-add the form submit listener
-    document.getElementById('projectForm').addEventListener('submit', handleProjectSubmit);
-
     if (projectId) {
         title.textContent = 'Edit Project';
         const project = projects.find(p => p.id === projectId);
@@ -827,6 +823,7 @@ async function openProjectModal(projectId = null) {
     modal.classList.add('active');
 }
 
+// Function to set up modal-specific event listeners
 function populateProjectForm(project) {
     // Map database field names (snake_case) to form field IDs (camelCase)
     const fieldMappings = {
@@ -1050,39 +1047,12 @@ async function deleteProject(projectId) {
 
 function viewProject(projectId) {
     openProjectModal(projectId);
-
     // Make form read-only for non-managers
-    if (currentUser.role !== 'manager') {
-        const form = document.getElementById('projectForm');
-        const modal = document.getElementById('projectModal');
-
-        // Disable all inputs, selects, and textareas
-        const inputs = form.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
-            input.disabled = true;
-            input.readOnly = true;
-        });
-
-        // Hide the submit button and show only cancel
-        const submitButton = form.querySelector('button[type="submit"]');
-        if (submitButton) {
-            submitButton.style.display = 'none';
-        }
-
-        // Change modal title to indicate view-only mode
-        const title = document.getElementById('projectModalTitle');
-        title.textContent = 'View Project (Read Only)';
-
-        // Add view-only class for additional styling
-        modal.classList.add('view-only-mode');
-
-        // Prevent form submission entirely
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            showErrorMessage('This project is in view-only mode');
-            return false;
-        });
-    }
+    const form = document.getElementById('projectForm');
+    const inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        input.disabled = true;
+    });
 }
 
 // Tasks Functions
@@ -2594,6 +2564,8 @@ function evaluateTaskUpdateGoal(userId, workSchedule, evaluationDate = new Date(
             onTime: achievedTimeliness,
             status: achievedTimeliness ? 'On Time' : 'Late',
             target: '2 working days',
+            success: achievedTimeliness,
+            ticketLink: project.ticket_link,
             description: `${project ? (project.project_name || `Project ${project.id}`) : 'Unknown Project'} - ${task.task_name || task.description || 'Task'} - ${achievedTimeliness ? 'On Time' : 'Late'} (${updateDays} days, ${updateType})`
         });
     });
@@ -2653,7 +2625,7 @@ function evaluateDesignCompletionGoal(userId, workSchedule, evaluationDate = new
             breakdown: [],
             statistics: {
                 totalProjects: 0,
-                onTimeProjects: 0,
+                onTrackProjects: 0,
                 delayedProjects: 0,
                 completedProjects: 0,
                 pendingProjects: 0
@@ -2741,7 +2713,7 @@ function evaluateDesignCompletionGoal(userId, workSchedule, evaluationDate = new
         breakdown: breakdown,
         statistics: {
             totalProjects: userProjects.length,
-            onTimeProjects: successful,
+            onTrackProjects: successful,
             delayedProjects: userProjects.length - successful,
             completedProjects: completed,
             pendingProjects: pending
@@ -2764,7 +2736,7 @@ async function calculateGoalsForUser(userId, evaluationDate = new Date()) {
         technicalIssues8Hour: evaluate8HourTechnicalGoal(userId, evaluationDate),
         compliance10Day: evaluate10DayComplianceGoal(userId, evaluationDate),
         noReopenedBugs: evaluateNoReopenedBugsGoal(userId, evaluationDate),
-        pageBugFixTime: evaluatePageBugFixTimeGoal(userId, workSchedule, evaluationDate)
+        pageBugFixTime: evaluatePageBugFixTimeGoal(userId, evaluationDate)
     };
 
     // Biweekly Goals (evaluated every other Monday)
