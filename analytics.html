@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - Kickoff Goal / Target Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Analytics-specific styles */
+        .analytics-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .workload-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .webmaster-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .webmaster-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .webmaster-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .workload-score {
+            font-size: 1.5em;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+        }
+
+        .workload-low { background-color: #28a745; }
+        .workload-medium { background-color: #ffc107; color: #333; }
+        .workload-high { background-color: #fd7e14; }
+        .workload-critical { background-color: #dc3545; }
+
+        .project-breakdown {
+            margin-top: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-name {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .status-count {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .project-count {
+            background: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
+        .weight-score {
+            background: #007bff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
+        .no-projects {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .analytics-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+            display: block;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #007bff;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Project list styles */
+        .status-section {
+            margin-bottom: 15px;
+        }
+
+        .project-list {
+            margin-top: 8px;
+            margin-left: 15px;
+        }
+
+        .project-item {
+            margin-bottom: 5px;
+        }
+
+        .project-link {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 0.85em;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 2px 0;
+        }
+
+        .project-link:hover {
+            text-decoration: underline;
+        }
+
+        .project-link i {
+            font-size: 0.7em;
+            opacity: 0.7;
+        }
+
+        /* Additional tab styles */
+        .tab-filters {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .tab-filters select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+
+        /* Insights grid */
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .insight-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .insight-card h5 {
+            color: #007bff;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .insight-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .insight-card li {
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+            color: #666;
+        }
+
+        .insight-card li:last-child {
+            border-bottom: none;
+        }
+
+        /* Performance specific styles */
+        .performance-metric {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .metric-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 1.2em;
+            color: #007bff;
+        }
+
+        .time-indicator {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+
+        .time-fast { background-color: #d4edda; color: #155724; }
+        .time-average { background-color: #fff3cd; color: #856404; }
+        .time-slow { background-color: #f8d7da; color: #721c24; }
+
+        /* Completion specific styles */
+        .completion-date {
+            font-size: 0.8em;
+            color: #666;
+            font-style: italic;
+        }
+
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* Tab content visibility */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Tab header styles */
+        .tab-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-header h2 {
+            margin: 0;
+            color: #333;
+        }
+
+        /* Project info row styles for performance tab */
+        .project-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .project-dates {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+            margin-left: 15px;
+            font-size: 0.8em;
+        }
+
+        .date-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .date-label {
+            color: #666;
+            font-weight: 500;
+            font-size: 0.85em;
+        }
+
+        .date-value {
+            color: #333;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="screen active">
+            <div class="login-container">
+                <div class="login-card">
+                    <h1><i class="fas fa-chart-bar"></i> Analytics Dashboard</h1>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </form>
+                    <div id="loginError" class="error-message"></div>
+                    <div style="margin-top: 15px; text-align: center;">
+                        <a href="index.html" class="back-link">
+                            <i class="fas fa-arrow-left"></i> Back to Main Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Dashboard -->
+        <div id="dashboard" class="screen">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-content">
+                    <h1><i class="fas fa-chart-bar"></i> Analytics Dashboard</h1>
+                    <div class="header-actions">
+                        <span id="userInfo" class="user-info"></span>
+                        <a href="index.html" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Main Dashboard
+                        </a>
+                        <button id="logoutBtn" class="btn btn-secondary">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <div class="analytics-container">
+                <a href="index.html" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Back to Main Dashboard
+                </a>
+
+                <!-- Navigation -->
+                <nav class="nav-tabs">
+                    <button class="nav-tab active" data-tab="workload">
+                        <i class="fas fa-weight"></i> Workload Analysis
+                    </button>
+                    <button class="nav-tab" data-tab="performance">
+                        <i class="fas fa-chart-line"></i> Performance Metrics
+                    </button>
+                    <button class="nav-tab" data-tab="completion">
+                        <i class="fas fa-trophy"></i> Completion Stats
+                    </button>
+                    <button class="nav-tab" data-tab="insights">
+                        <i class="fas fa-lightbulb"></i> Insights
+                    </button>
+                </nav>
+
+                <!-- Workload Tab -->
+                <div id="workloadTab" class="tab-content active">
+                    <div class="tab-header">
+                        <h2>Webmaster Workload Analysis</h2>
+                        <button id="refreshWorkloadBtn" class="btn btn-primary">
+                            <i class="fas fa-sync"></i> Refresh Data
+                        </button>
+                    </div>
+
+                    <!-- Summary Stats -->
+                    <div id="workloadStats" class="analytics-stats">
+                        <!-- Stats will be loaded here -->
+                    </div>
+
+                    <!-- Workload Grid -->
+                    <div id="workloadGrid" class="workload-grid">
+                        <!-- Workload cards will be loaded here -->
+                    </div>
+
+                    <!-- Weight Legend -->
+                    <div class="form-section" style="margin-top: 30px;">
+                        <h4>Project Status Weight Legend</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; margin-top: 15px;">
+                            <div class="status-item">
+                                <span class="status-name">WP conversion - Pending</span>
+                                <span class="weight-score">10/10</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-name">WP conversion QA</span>
+                                <span class="weight-score">8/10</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-name">WP conversion QA - Fixing</span>
+                                <span class="weight-score">7/10</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-name">Page Creation - Pending</span>
+                                <span class="weight-score">6/10</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-name">Page creation QA</span>
+                                <span class="weight-score">5/10</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-name">Page creation QA - Fixing</span>
+                                <span class="weight-score">4/10</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-name">Page creation QA - Verifying</span>
+                                <span class="weight-score">3/10</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-name">Golive Approval Pending</span>
+                                <span class="weight-score">2/10</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-name">Golive QA</span>
+                                <span class="weight-score">1/10</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics Tab -->
+                <div id="performanceTab" class="tab-content">
+                    <div class="tab-header">
+                        <h2>WP Conversion Performance (Working Days)</h2>
+                        <div class="tab-filters">
+                            <select id="performancePeriod">
+                                <option value="30">Last 30 days</option>
+                                <option value="90">Last 90 days</option>
+                                <option value="180">Last 6 months</option>
+                                <option value="365">Last year</option>
+                                <option value="all">All time</option>
+                            </select>
+                            <button id="refreshPerformanceBtn" class="btn btn-primary">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Performance Stats -->
+                    <div id="performanceStats" class="analytics-stats">
+                        <!-- Performance stats will be loaded here -->
+                    </div>
+
+                    <!-- WP Conversion Time Analysis -->
+                    <div id="wpConversionTimeGrid" class="workload-grid">
+                        <!-- WP conversion time data will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Completion Stats Tab -->
+                <div id="completionTab" class="tab-content">
+                    <div class="tab-header">
+                        <h2>Project Completion Statistics</h2>
+                        <div class="tab-filters">
+                            <select id="completionPeriod">
+                                <option value="30">Last 30 days</option>
+                                <option value="90">Last 90 days</option>
+                                <option value="180">Last 6 months</option>
+                                <option value="365">Last year</option>
+                                <option value="all">All time</option>
+                            </select>
+                            <button id="refreshCompletionBtn" class="btn btn-primary">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Completion Stats -->
+                    <div id="completionStatsGrid" class="analytics-stats">
+                        <!-- Completion stats will be loaded here -->
+                    </div>
+
+                    <!-- Detailed Completion Analysis -->
+                    <div id="completionAnalysisGrid" class="workload-grid">
+                        <!-- Completion analysis will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Insights Tab -->
+                <div id="insightsTab" class="tab-content">
+                    <div class="tab-header">
+                        <h2>Advanced Analytics & Insights</h2>
+                    </div>
+                    <div class="form-section">
+                        <h4>Available Analytics</h4>
+                        <div class="insights-grid">
+                            <div class="insight-card">
+                                <h5><i class="fas fa-clock"></i> Time-Based Analytics</h5>
+                                <ul>
+                                    <li>Average project completion time</li>
+                                    <li>Bottleneck identification by phase</li>
+                                    <li>Seasonal productivity trends</li>
+                                    <li>Peak performance periods</li>
+                                </ul>
+                            </div>
+                            <div class="insight-card">
+                                <h5><i class="fas fa-chart-bar"></i> Quality Metrics</h5>
+                                <ul>
+                                    <li>Bug reopening rates by webmaster</li>
+                                    <li>First-time completion success rate</li>
+                                    <li>Manager feedback frequency</li>
+                                    <li>Post-launch issue tracking</li>
+                                </ul>
+                            </div>
+                            <div class="insight-card">
+                                <h5><i class="fas fa-users"></i> Team Performance</h5>
+                                <ul>
+                                    <li>Level 1 vs Level 2 webmaster comparison</li>
+                                    <li>Cross-training effectiveness</li>
+                                    <li>Workload distribution fairness</li>
+                                    <li>Collaboration patterns</li>
+                                </ul>
+                            </div>
+                            <div class="insight-card">
+                                <h5><i class="fas fa-target"></i> Business Intelligence</h5>
+                                <ul>
+                                    <li>Revenue per project correlation</li>
+                                    <li>Client satisfaction vs completion time</li>
+                                    <li>Resource allocation optimization</li>
+                                    <li>Capacity planning recommendations</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p style="margin-top: 20px; font-style: italic; color: #666;">
+                            These advanced analytics are available upon request. Contact the development team to implement specific metrics for your needs.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="analytics.js"></script>
+</body>
+</html>
