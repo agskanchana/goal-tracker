@@ -523,8 +523,6 @@ function switchTab(tabName) {
     } else if (tabName === 'active-projects') {
         console.log('Loading active projects data...');
         loadActiveProjectsData();
-    } else if (tabName === 'insights') {
-        console.log('Insights tab - no data loading needed');
     }
 }
 
