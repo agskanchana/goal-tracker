@@ -392,6 +392,11 @@ function setupDashboardEventListeners() {
         refreshCompletionBtn.addEventListener('click', loadCompletionData);
     }
 
+    const refreshActiveProjectsBtn = document.getElementById('refreshActiveProjectsBtn');
+    if (refreshActiveProjectsBtn) {
+        refreshActiveProjectsBtn.addEventListener('click', loadActiveProjectsData);
+    }
+
     // Period filters
     const performancePeriod = document.getElementById('performancePeriod');
     if (performancePeriod) {
@@ -515,6 +520,9 @@ function switchTab(tabName) {
     } else if (tabName === 'completion') {
         console.log('Loading completion data...');
         loadCompletionData();
+    } else if (tabName === 'active-projects') {
+        console.log('Loading active projects data...');
+        loadActiveProjectsData();
     } else if (tabName === 'insights') {
         console.log('Insights tab - no data loading needed');
     }
@@ -859,6 +867,145 @@ function filterProjectsByPeriod(projects, period) {
         const createdDate = new Date(project.created_at);
         return createdDate >= cutoffDate;
     });
+}
+
+async function loadActiveProjectsData() {
+    console.log('Loading active projects data...');
+
+    try {
+        // Ensure data is loaded
+        if (projects.length === 0 || users.length === 0) {
+            await loadData();
+        }
+
+        // Define kickoff-related statuses
+        const kickoffStatuses = [
+            'WP conversion - Pending',
+            'WP conversion QA',
+            'WP conversion QA - Fixing',
+            'Page Creation - Pending',
+            'Page creation QA',
+            'Page creation QA - Fixing',
+            'Page creation QA - Verifying',
+            'Golive Approval Pending'
+        ];
+
+        // Filter projects in kickoff statuses
+        const activeProjects = projects.filter(project =>
+            kickoffStatuses.includes(project.project_status) && project.design_approved_date
+        );        // Calculate duration from Design Approved Date for each project
+        const projectsWithDuration = activeProjects.map(project => {
+            const designApprovedDate = new Date(project.design_approved_date);
+            const today = new Date();
+
+            // Calculate calendar days since Design Approved Date
+            const calendarDays = Math.ceil((today - designApprovedDate) / (1000 * 60 * 60 * 24));
+
+            // Determine if project exceeds target (using calendar days: ~30 days = 1 month)
+            let ratingClass = 'good';
+            let ratingText = 'On Track';
+
+            if (calendarDays > 30) {
+                ratingClass = 'overdue';
+                ratingText = 'Overdue';
+            } else if (calendarDays > 25) {
+                ratingClass = 'warning';
+                ratingText = 'Warning';
+            }
+
+            return {
+                ...project,
+                daysActive: calendarDays,
+                ratingClass,
+                ratingText
+            };
+        });
+
+        // Sort by duration (longest first)
+        projectsWithDuration.sort((a, b) => b.daysActive - a.daysActive);
+
+        // Update statistics
+        updateActiveProjectsStats(projectsWithDuration);
+
+        // Render projects list
+        renderActiveProjectsList(projectsWithDuration);
+
+    } catch (error) {
+        console.error('Error loading active projects data:', error);
+        document.getElementById('activeProjectsList').innerHTML = `
+            <div class="error-message">
+                <p>Error loading active projects data. Please try refreshing.</p>
+            </div>
+        `;
+    }
+}
+
+function updateActiveProjectsStats(projectsWithDuration) {
+    const statsContainer = document.getElementById('activeProjectsStats');
+    if (!statsContainer) return;
+
+    const totalProjects = projectsWithDuration.length;
+    const overdueProjects = projectsWithDuration.filter(p => p.daysActive > 30).length;
+    const averageDays = totalProjects > 0
+        ? (projectsWithDuration.reduce((sum, p) => sum + p.daysActive, 0) / totalProjects).toFixed(1)
+        : 0;
+    const longestActive = totalProjects > 0 ? Math.max(...projectsWithDuration.map(p => p.daysActive)) : 0;
+
+    // Update stat values
+    document.getElementById('totalActiveProjects').textContent = totalProjects;
+    document.getElementById('overdueProjects').textContent = overdueProjects;
+    document.getElementById('averageDaysActive').textContent = averageDays;
+    document.getElementById('longestActiveProject').textContent = longestActive;
+}
+
+function renderActiveProjectsList(projectsWithDuration) {
+    const container = document.getElementById('activeProjectsList');
+    if (!container) return;
+
+    if (projectsWithDuration.length === 0) {
+        container.innerHTML = `
+            <div class="no-data-message">
+                <i class="fas fa-check-circle"></i>
+                <p>No active projects in kickoff statuses!</p>
+            </div>
+        `;
+        return;
+    }
+
+    const projectsHtml = projectsWithDuration.map(project => {
+        const designApprovedDate = new Date(project.design_approved_date);
+        const formattedDate = designApprovedDate.toLocaleDateString();
+
+        // Generate ticket link if ticket_link exists
+        const ticketLink = project.ticket_link
+            ? `<a href="${project.ticket_link}" target="_blank">${project.project_name}</a>`
+            : project.project_name;
+
+        return `
+            <div class="project-item ${project.ratingClass}">
+                <div class="project-info">
+                    <div class="project-name">${ticketLink}</div>
+                    <div class="project-status">${project.project_status}</div>
+                    <div class="project-dates">
+                        Design Approved: ${formattedDate}
+                        ${project.assigned_webmaster ? ` | Webmaster: ${getUserName(project.assigned_webmaster)}` : ''}
+                    </div>
+                </div>
+                <div class="project-duration">
+                    <div class="duration-value ${project.ratingClass}">${project.daysActive}</div>
+                    <div class="duration-label">Calendar Days</div>
+                    <div class="target-indicator ${project.ratingClass}">${project.ratingText}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = projectsHtml;
+}
+
+function getUserName(userId) {
+    const user = users.find(u => u.id === userId);
+    return user ? user.name || user.email : 'Unknown';
 }
 
 function updatePerformanceStats(performanceData, period) {

@@ -336,6 +336,139 @@
             color: #333;
             font-size: 0.9em;
         }
+
+        /* Active Projects specific styles */
+        .projects-container {
+            margin-top: 20px;
+        }
+
+        .project-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .project-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+
+        .project-item.overdue {
+            border-left: 4px solid #e74c3c;
+            background-color: #fdf2f2;
+        }
+
+        .project-item.warning {
+            border-left: 4px solid #f39c12;
+            background-color: #fefaf5;
+        }
+
+        .project-item.good {
+            border-left: 4px solid #27ae60;
+            background-color: #f8fff9;
+        }
+
+        .project-info {
+            flex: 1;
+        }
+
+        .project-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .project-name a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .project-name a:hover {
+            text-decoration: underline;
+        }
+
+        .project-status {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-bottom: 3px;
+        }
+
+        .project-dates {
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        .project-duration {
+            text-align: right;
+            min-width: 120px;
+        }
+
+        .duration-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .duration-value.overdue {
+            color: #e74c3c;
+        }
+
+        .duration-value.warning {
+            color: #f39c12;
+        }
+
+        .duration-value.good {
+            color: #27ae60;
+        }
+
+        .duration-label {
+            font-size: 0.8em;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .target-indicator {
+            font-size: 0.75em;
+            padding: 2px 6px;
+            border-radius: 12px;
+            margin-top: 2px;
+            display: inline-block;
+        }
+
+        .target-indicator.overdue {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .target-indicator.warning {
+            background-color: #f39c12;
+            color: white;
+        }
+
+        .target-indicator.good {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        .info-text {
+            background-color: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 20px;
+            color: #0c5460;
+        }
+
+        .info-text i {
+            margin-right: 8px;
+            color: #17a2b8;
+        }
     </style>
 </head>
 <body>
@@ -400,6 +533,9 @@
                     </button>
                     <button class="nav-tab" data-tab="completion">
                         <i class="fas fa-trophy"></i> Completion Stats
+                    </button>
+                    <button class="nav-tab" data-tab="active-projects">
+                        <i class="fas fa-clock"></i> Active Projects
                     </button>
                     <button class="nav-tab" data-tab="insights">
                         <i class="fas fa-lightbulb"></i> Insights
@@ -524,6 +660,51 @@
                     <!-- Detailed Completion Analysis -->
                     <div id="completionAnalysisGrid" class="workload-grid">
                         <!-- Completion analysis will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Active Projects Tab -->
+                <div id="active-projectsTab" class="tab-content">
+                    <div class="tab-header">
+                        <h2>Active Projects in Kickoff Statuses</h2>
+                        <button id="refreshActiveProjectsBtn" class="btn btn-primary">
+                            <i class="fas fa-sync"></i> Refresh Data
+                        </button>
+                    </div>
+
+                    <div class="form-section">
+                        <p class="info-text">
+                            <i class="fas fa-info-circle"></i>
+                            This shows all projects currently in kickoff-related statuses, with duration calculated from the Design Approved Date.
+                            Projects exceeding the 1-month target (30 calendar days) are highlighted.
+                        </p>
+                    </div>
+
+                    <!-- Summary Stats -->
+                    <div id="activeProjectsStats" class="analytics-stats">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalActiveProjects">-</div>
+                            <div class="stat-label">Total Active Projects</div>
+                        </div>
+                        <div class="stat-card warning">
+                            <div class="stat-value" id="overdueProjects">-</div>
+                            <div class="stat-label">Over Target (>30 days)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="averageDaysActive">-</div>
+                            <div class="stat-label">Average Days Active</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="longestActiveProject">-</div>
+                            <div class="stat-label">Longest Active (days)</div>
+                        </div>
+                    </div>
+
+                    <!-- Active Projects List -->
+                    <div id="activeProjectsList" class="projects-container">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i> Loading active projects...
+                        </div>
                     </div>
                 </div>
 
