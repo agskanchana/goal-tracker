@@ -397,6 +397,16 @@ function setupDashboardEventListeners() {
         refreshActiveProjectsBtn.addEventListener('click', loadActiveProjectsData);
     }
 
+    const refreshDesignApprovedBtn = document.getElementById('refreshDesignApprovedBtn');
+    if (refreshDesignApprovedBtn) {
+        refreshDesignApprovedBtn.addEventListener('click', loadDesignApprovedData);
+    }
+
+    const applyDesignApprovedFilter = document.getElementById('applyDesignApprovedFilter');
+    if (applyDesignApprovedFilter) {
+        applyDesignApprovedFilter.addEventListener('click', loadDesignApprovedData);
+    }
+
     // Period filters
     const performancePeriod = document.getElementById('performancePeriod');
     if (performancePeriod) {
@@ -406,6 +416,14 @@ function setupDashboardEventListeners() {
     const completionPeriod = document.getElementById('completionPeriod');
     if (completionPeriod) {
         completionPeriod.addEventListener('change', loadCompletionData);
+    }
+
+    // Set default reference date to today for Design Approved tab
+    const referenceDateInput = document.getElementById('referenceDate');
+    if (referenceDateInput) {
+        const today = new Date();
+        const formattedToday = today.toISOString().split('T')[0];
+        referenceDateInput.value = formattedToday;
     }
 
     console.log('Dashboard event listeners set up successfully');
@@ -523,6 +541,9 @@ function switchTab(tabName) {
     } else if (tabName === 'active-projects') {
         console.log('Loading active projects data...');
         loadActiveProjectsData();
+    } else if (tabName === 'design-approved') {
+        console.log('Loading design approved data...');
+        loadDesignApprovedData();
     }
 }
 
@@ -1322,4 +1343,176 @@ if (typeof module !== 'undefined' && module.exports) {
                 .reduce((sum, p) => sum + (PROJECT_STATUS_WEIGHTS[p.project_status] || 0), 0);
         }
     };
+}
+
+async function loadDesignApprovedData() {
+    console.log('Loading design approved data...');
+
+    try {
+        // Ensure data is loaded
+        if (projects.length === 0 || users.length === 0) {
+            await loadData();
+        }
+
+        // Get filter parameters
+        const referenceDateInput = document.getElementById('referenceDate');
+        const monthsPeriodSelect = document.getElementById('monthsPeriod');
+
+        // Use today if no reference date provided
+        const referenceDate = referenceDateInput.value
+            ? new Date(referenceDateInput.value)
+            : new Date();
+
+        const monthsBack = parseInt(monthsPeriodSelect.value) || 1;
+
+        // Calculate start date (X months back from reference date)
+        const startDate = new Date(referenceDate);
+        startDate.setMonth(startDate.getMonth() - monthsBack);
+
+        // Filter projects with design_approved_date within the period
+        const filteredProjects = projects.filter(project => {
+            if (!project.design_approved_date) return false;
+
+            const designApprovedDate = new Date(project.design_approved_date);
+            return designApprovedDate >= startDate && designApprovedDate <= referenceDate;
+        });
+
+        // Sort by design approved date (most recent first)
+        filteredProjects.sort((a, b) => new Date(b.design_approved_date) - new Date(a.design_approved_date));
+
+        // Calculate analytics
+        const analyticsData = calculateDesignApprovedAnalytics(filteredProjects, referenceDate);
+
+        // Update UI
+        updateDesignApprovedStats(analyticsData);
+        updatePeriodInfo(startDate, referenceDate, monthsBack);
+        renderDesignApprovedList(filteredProjects);
+
+    } catch (error) {
+        console.error('Error loading design approved data:', error);
+        document.getElementById('designApprovedList').innerHTML = `
+            <div class="error-message">
+                <p>Error loading design approved data. Please try refreshing.</p>
+            </div>
+        `;
+    }
+}
+
+function calculateDesignApprovedAnalytics(projects, referenceDate) {
+    const totalProjects = projects.length;
+
+    // Calculate average days from design approved to webmaster assigned
+    const projectsWithAssignment = projects.filter(p => p.webmaster_assigned_date && p.design_approved_date);
+    const avgDesignToStart = projectsWithAssignment.length > 0
+        ? (projectsWithAssignment.reduce((sum, project) => {
+            const designDate = new Date(project.design_approved_date);
+            const assignDate = new Date(project.webmaster_assigned_date);
+            const days = Math.ceil((assignDate - designDate) / (1000 * 60 * 60 * 24));
+            return sum + days;
+        }, 0) / projectsWithAssignment.length).toFixed(1)
+        : 0;
+
+    // Count completed projects (those with golive QA date)
+    const completedProjects = projects.filter(p => p.date_sent_to_golive_qa).length;
+
+    // Count still active projects (not completed and not live)
+    const stillActiveProjects = projects.filter(p =>
+        !p.date_sent_to_golive_qa &&
+        p.project_status !== 'Live' &&
+        p.project_status !== 'Completed'
+    ).length;
+
+    return {
+        totalProjects,
+        avgDesignToStart,
+        completedProjects,
+        stillActiveProjects
+    };
+}
+
+function updateDesignApprovedStats(analyticsData) {
+    document.getElementById('totalDesignApproved').textContent = analyticsData.totalProjects;
+    document.getElementById('averageDesignToStart').textContent = analyticsData.avgDesignToStart || 0;
+    document.getElementById('completedFromDesign').textContent = analyticsData.completedProjects;
+    document.getElementById('stillActiveFromDesign').textContent = analyticsData.stillActiveProjects;
+}
+
+function updatePeriodInfo(startDate, endDate, monthsBack) {
+    const periodElement = document.getElementById('periodText');
+    if (!periodElement) return;
+
+    const startDateStr = startDate.toLocaleDateString();
+    const endDateStr = endDate.toLocaleDateString();
+
+    periodElement.textContent = `${startDateStr} to ${endDateStr} (${monthsBack} month${monthsBack > 1 ? 's' : ''} back)`;
+}
+
+function renderDesignApprovedList(projects) {
+    const container = document.getElementById('designApprovedList');
+    if (!container) return;
+
+    if (projects.length === 0) {
+        container.innerHTML = `
+            <div class="no-data-message">
+                <i class="fas fa-calendar-times"></i>
+                <p>No projects with Design Approved Date in the selected period.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const projectsHtml = projects.map(project => {
+        const designApprovedDate = new Date(project.design_approved_date);
+        const formattedDesignDate = designApprovedDate.toLocaleDateString();
+
+        // Calculate days since design approved
+        const today = new Date();
+        const daysSinceDesign = Math.ceil((today - designApprovedDate) / (1000 * 60 * 60 * 24));
+
+        // Determine status color
+        let statusClass = 'good';
+        if (project.project_status === 'Completed' || project.project_status === 'Live') {
+            statusClass = 'good';
+        } else if (daysSinceDesign > 60) {
+            statusClass = 'overdue';
+            console.log('Project overdue:', project.project_name, daysSinceDesign);
+        } else if (daysSinceDesign > 30) {
+            statusClass = 'warning';
+        }
+
+        // Generate ticket link
+        const ticketLink = project.ticket_link
+            ? `<a href="${project.ticket_link}" target="_blank">${project.project_name}</a>`
+            : project.project_name;
+
+        // Format additional dates
+        const webmasterAssignedDate = project.webmaster_assigned_date
+            ? new Date(project.webmaster_assigned_date).toLocaleDateString()
+            : 'Not assigned';
+
+        const goliveDate = project.date_sent_to_golive_qa
+            ? new Date(project.date_sent_to_golive_qa).toLocaleDateString()
+            : '-';
+
+        return `
+            <div class="project-item ${statusClass}">
+                <div class="project-info">
+                    <div class="project-name">${ticketLink}</div>
+                    <div class="project-status">${project.project_status}</div>
+                    <div class="project-dates">
+                        Design Approved: ${formattedDesignDate} |
+                        Webmaster Assigned: ${webmasterAssignedDate} |
+                        ${project.assigned_webmaster ? ` Webmaster: ${getUserName(project.assigned_webmaster)} |` : ''}
+                        Golive QA: ${goliveDate}
+                    </div>
+                </div>
+                <div class="project-duration">
+                    <div class="duration-value ${statusClass}">${daysSinceDesign}</div>
+                    <div class="duration-label">Days Since Design</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = projectsHtml;
 }

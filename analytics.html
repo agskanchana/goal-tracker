@@ -537,6 +537,9 @@
                     <button class="nav-tab" data-tab="active-projects">
                         <i class="fas fa-clock"></i> Active Projects
                     </button>
+                    <button class="nav-tab" data-tab="design-approved">
+                        <i class="fas fa-calendar-check"></i> Design Approved
+                    </button>
                 </nav>
 
                 <!-- Workload Tab -->
@@ -701,6 +704,75 @@
                     <div id="activeProjectsList" class="projects-container">
                         <div class="loading-spinner">
                             <i class="fas fa-spinner fa-spin"></i> Loading active projects...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Design Approved Tab -->
+                <div id="design-approvedTab" class="tab-content">
+                    <div class="tab-header">
+                        <h2>Design Approved Analytics</h2>
+                        <button id="refreshDesignApprovedBtn" class="btn btn-primary">
+                            <i class="fas fa-sync"></i> Refresh Data
+                        </button>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Filter Options</h4>
+                        <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px;">
+                            <div>
+                                <label for="referenceDate">Reference Date (calculate from):</label>
+                                <input type="date" id="referenceDate" class="form-control" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                            </div>
+                            <div>
+                                <label for="monthsPeriod">Months back:</label>
+                                <select id="monthsPeriod" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px;">
+                                    <option value="1">Last 1 month</option>
+                                    <option value="2">Last 2 months</option>
+                                    <option value="3">Last 3 months</option>
+                                    <option value="6">Last 6 months</option>
+                                    <option value="12">Last 12 months</option>
+                                </select>
+                            </div>
+                            <button id="applyDesignApprovedFilter" class="btn btn-secondary">
+                                <i class="fas fa-filter"></i> Apply Filter
+                            </button>
+                        </div>
+                        <p class="info-text">
+                            <i class="fas fa-info-circle"></i>
+                            Shows projects with Design Approved Date within the selected period. Leave reference date empty to use today's date.
+                        </p>
+                    </div>
+
+                    <!-- Summary Stats -->
+                    <div id="designApprovedStats" class="analytics-stats">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalDesignApproved">-</div>
+                            <div class="stat-label">Projects Design Approved</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="averageDesignToStart">-</div>
+                            <div class="stat-label">Avg Days Design to Start</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="completedFromDesign">-</div>
+                            <div class="stat-label">Completed Projects</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stillActiveFromDesign">-</div>
+                            <div class="stat-label">Still Active</div>
+                        </div>
+                    </div>
+
+                    <!-- Period Info -->
+                    <div id="periodInfo" class="form-section" style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                        <strong>Period:</strong> <span id="periodText">-</span>
+                    </div>
+
+                    <!-- Design Approved Projects List -->
+                    <div id="designApprovedList" class="projects-container">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i> Loading design approved projects...
                         </div>
                     </div>
                 </div>
