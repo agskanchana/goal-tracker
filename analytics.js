@@ -556,12 +556,13 @@ async function loadWorkloadData() {
             await loadData();
         }
 
-        // Get webmasters only
+        // Get webmasters and managers
         const webmasters = users.filter(user =>
             user.role && (
                 user.role.includes('webmaster') ||
                 user.role === 'webmaster_level_1' ||
-                user.role === 'webmaster_level_2'
+                user.role === 'webmaster_level_2' ||
+                user.role === 'manager'
             )
         );
 
@@ -735,12 +736,13 @@ async function loadPerformanceData() {
         // Filter projects based on selected period
         const filteredProjects = filterProjectsByPeriod(projects, period);
 
-        // Get webmasters only
+        // Get webmasters and managers
         const webmasters = users.filter(user =>
             user.role && (
                 user.role.includes('webmaster') ||
                 user.role === 'webmaster_level_1' ||
-                user.role === 'webmaster_level_2'
+                user.role === 'webmaster_level_2' ||
+                user.role === 'manager'
             )
         );
 
@@ -812,12 +814,13 @@ async function loadCompletionData() {
         // Filter projects based on selected period
         const filteredProjects = filterProjectsByPeriod(projects, period);
 
-        // Get webmasters only
+        // Get webmasters and managers
         const webmasters = users.filter(user =>
             user.role && (
                 user.role.includes('webmaster') ||
                 user.role === 'webmaster_level_1' ||
-                user.role === 'webmaster_level_2'
+                user.role === 'webmaster_level_2' ||
+                user.role === 'manager'
             )
         );
 

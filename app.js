@@ -249,10 +249,31 @@ async function initializeApp() {
 
     // Initialize demo data if Supabase is not configured
     if (!supabase) {
-        users = [...demoData.users];
-        projects = [...demoData.projects];
-        leaves = [...demoData.leaves];
-        tasks = [...demoData.tasks]; // Initialize tasks demo data
+        // Try to load existing data from localStorage first
+        const storedProjects = localStorage.getItem('projects');
+        const storedUsers = localStorage.getItem('users');
+        const storedLeaves = localStorage.getItem('leaves');
+        const storedTasks = localStorage.getItem('tasks');
+
+        if (storedProjects && storedUsers) {
+            // Load from localStorage
+            projects = JSON.parse(storedProjects);
+            users = JSON.parse(storedUsers);
+            leaves = storedLeaves ? JSON.parse(storedLeaves) : [...demoData.leaves];
+            tasks = storedTasks ? JSON.parse(storedTasks) : [...demoData.tasks];
+        } else {
+            // Initialize with demo data
+            users = [...demoData.users];
+            projects = [...demoData.projects];
+            leaves = [...demoData.leaves];
+            tasks = [...demoData.tasks];
+
+            // Save initial demo data to localStorage
+            localStorage.setItem('projects', JSON.stringify(projects));
+            localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem('leaves', JSON.stringify(leaves));
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
 
         // Show demo notification
         showDemoNotification();
@@ -1031,6 +1052,10 @@ async function handleProjectSubmit(e) {
                 savedProjectId = newProject.id;
                 currentProjectId = savedProjectId;
             }
+
+            // Save to localStorage for manager goals dashboard sync
+            localStorage.setItem('projects', JSON.stringify(projects));
+            localStorage.setItem('users', JSON.stringify(users));
         }
 
         // If this was a new project, enable the task section
@@ -1076,6 +1101,9 @@ async function deleteProject(projectId) {
             if (index > -1) {
                 projects.splice(index, 1);
             }
+
+            // Save to localStorage for manager goals dashboard sync
+            localStorage.setItem('projects', JSON.stringify(projects));
         }
 
         await loadProjects();
@@ -1849,7 +1877,8 @@ function renderHolidayCalendar() {
 // Helper Functions
 function loadWebmastersIntoSelect() {
     const select = document.getElementById('assignedWebmaster');
-    const webmasters = users.filter(u => u.role.includes('webmaster'));
+    // Include both webmasters and managers for project assignments
+    const webmasters = users.filter(u => u.role.includes('webmaster') || u.role === 'manager');
 
     select.innerHTML = '<option value="">Select Webmaster</option>' +
         webmasters.map(user => `<option value="${user.id}">${user.name}</option>`).join('');
@@ -1859,7 +1888,8 @@ function loadWebmastersIntoGoalFilter() {
     const select = document.getElementById('webmasterFilter');
     if (!select) return;
 
-    const webmasters = users.filter(u => u.role.includes('webmaster'));
+    // Include both webmasters and managers for goal filtering
+    const webmasters = users.filter(u => u.role.includes('webmaster') || u.role === 'manager');
 
     select.innerHTML = '<option value="">All Webmasters</option>' +
         webmasters.map(user => `<option value="${user.id}">${user.name}</option>`).join('');
@@ -1869,7 +1899,8 @@ function loadWebmastersIntoProjectFilter() {
     const select = document.getElementById('projectWebmasterFilter');
     if (!select) return;
 
-    const webmasters = users.filter(u => u.role.includes('webmaster'));
+    // Include both webmasters and managers for project filtering
+    const webmasters = users.filter(u => u.role.includes('webmaster') || u.role === 'manager');
 
     select.innerHTML = '<option value="">All Webmasters</option>' +
         webmasters.map(user => `<option value="${user.id}">${user.name}</option>`).join('');

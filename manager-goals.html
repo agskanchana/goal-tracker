@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager's Goals - Kickoff Goal / Target Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Manager Goals specific styles */
+        .manager-goals-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .goal-section {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .goal-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .goal-achieved {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .goal-not-achieved {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .goal-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .goal-description {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .feature-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid #28a745;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .feature-description {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .feature-date {
+            color: #888;
+            font-size: 0.8em;
+        }
+
+        .goal-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .metric-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .metric-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .evaluation-period {
+            background: #e8f4fd;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid #bee5eb;
+        }
+
+        .tickets-container {
+            margin-top: 15px;
+        }
+
+        .ticket-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+
+        .ticket-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .ticket-info {
+            flex: 1;
+        }
+
+        .ticket-dates {
+            display: flex;
+            gap: 10px;
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.8em;
+        }
+
+        .goal-details-container {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .goal-details ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .goal-details li {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .text-success {
+            color: #28a745 !important;
+        }
+
+        .text-danger {
+            color: #dc3545 !important;
+        }
+
+        .goal-details h5 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        /* Individual goal status styling */
+        .form-section h4 {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .form-section h4 .goal-status {
+            font-size: 0.8em;
+            padding: 4px 12px;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .feature-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .feature-content {
+            flex: 1;
+        }
+
+        .feature-actions {
+            display: flex;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        .feature-actions .btn {
+            padding: 4px 8px;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="screen active">
+            <div class="login-container">
+                <div class="login-card">
+                    <h1><i class="fas fa-target"></i> Manager's Goals</h1>
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </form>
+                    <div id="loginError" class="error-message"></div>
+                    <div style="margin-top: 15px; text-align: center;">
+                        <a href="index.html" class="back-link">
+                            <i class="fas fa-arrow-left"></i> Back to Main Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manager Goals Dashboard -->
+        <div id="dashboard" class="screen">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-content">
+                    <h1><i class="fas fa-target"></i> Manager's Goals Dashboard</h1>
+                    <div class="header-actions">
+                        <span id="userInfo" class="user-info"></span>
+                        <a href="index.html" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Main Dashboard
+                        </a>
+                        <button id="logoutBtn" class="btn btn-secondary">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <div class="manager-goals-container">
+                <a href="index.html" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Back to Main Dashboard
+                </a>
+
+                <!-- Evaluation Period Selector -->
+                <div class="form-section">
+                    <h3>Evaluation Period</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="evaluationDate">Evaluation Date (leave empty for today)</label>
+                            <input type="date" id="evaluationDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <button id="refreshGoalsBtn" class="btn btn-primary">
+                                <i class="fas fa-sync"></i> Refresh Goals
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quarterly Goals -->
+                <div class="goal-section">
+                    <div class="goal-header">
+                        <h2><i class="fas fa-calendar-quarter"></i> Quarterly Goals</h2>
+                        <span id="quarterlyStatus" class="goal-status goal-not-achieved">Not Achieved</span>
+                    </div>
+
+                    <div class="goal-description">
+                        <strong>QUARTERLY Goal:</strong> A minimum of 3 existing features should be optimized or refactored in the ekwa theme to improve performance, maintainability, implementation around time, or user experience.
+                    </div>
+
+                    <div id="quarterlyPeriod" class="evaluation-period"></div>
+
+                    <!-- Add/Edit Feature Form -->
+                    <div class="form-section">
+                        <h4 id="featureFormTitle">Add Feature Optimization/Refactoring</h4>
+                        <form id="featureForm">
+                            <input type="hidden" id="featureId">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="featureTitle">Feature Title *</label>
+                                    <input type="text" id="featureTitle" required class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="implementedDate">Implemented Date *</label>
+                                    <input type="date" id="implementedDate" required class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="featureDescription">Feature Description *</label>
+                                <textarea id="featureDescription" required class="form-control" rows="3" placeholder="Describe the optimization/refactoring done..."></textarea>
+                            </div>
+                            <div class="form-buttons">
+                                <button type="submit" class="btn btn-primary" id="featureSubmitBtn">
+                                    <i class="fas fa-plus"></i> Add Feature
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="featureCancelBtn" style="display: none;" onclick="cancelFeatureEdit()">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Features List -->
+                    <div id="quarterlyMetrics" class="goal-metrics">
+                        <div class="metric-card">
+                            <div class="metric-value" id="featuresCount">0</div>
+                            <div class="metric-label">Features Implemented</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="quarterlyProgress">0%</div>
+                            <div class="metric-label">Progress (3 required)</div>
+                        </div>
+                    </div>
+
+                    <div id="featuresList">
+                        <!-- Features will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Monthly Goals -->
+                <div class="goal-section">
+                    <div class="goal-header">
+                        <h2><i class="fas fa-calendar-month"></i> Monthly Goals</h2>
+                        <span id="monthlyStatus" class="goal-status goal-not-achieved">Not Achieved</span>
+                    </div>
+
+                    <div id="monthlyPeriod" class="evaluation-period"></div>
+
+                    <!-- Monthly Goal 1: Design Review Email -->
+                    <div class="form-section">
+                        <h4>1. Design Review Email Summary
+                            <span id="monthlyGoal1Status" class="goal-status goal-not-achieved">Not Achieved</span>
+                            <button class="btn btn-sm btn-secondary" onclick="toggleGoalDetails('monthlyGoal1Details')" style="margin-left: 10px;">
+                                <i class="fas fa-chevron-down"></i> Details
+                            </button>
+                        </h4>
+                        <div class="goal-description">
+                            Check approved designs from last month for internal standards compliance and send summary email to required stakeholders.
+                        </div>
+
+                        <div id="monthlyGoal1Metrics" class="goal-metrics">
+                            <!-- Metrics will be loaded here -->
+                        </div>
+
+                        <div class="form-group">
+                            <label for="designEmailSentDate">Date Email summary sent to stakeholders (Ops Manager, Audit Team, Department Head, UI Design Team):</label>
+                            <input type="date" id="designEmailSentDate" class="form-control">
+                        </div>
+
+                        <div id="monthlyGoal1Details" class="goal-details-container" style="display: none;">
+                            <!-- Project details will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Monthly Goal 2: 8-Hour Technical Check -->
+                    <div class="form-section">
+                        <h4>2. 8-Hour Technical Check
+                            <span id="monthlyGoal2Status" class="goal-status goal-not-achieved">Not Achieved</span>
+                            <button class="btn btn-sm btn-secondary" onclick="toggleGoalDetails('monthlyGoal2Details')" style="margin-left: 10px;">
+                                <i class="fas fa-chevron-down"></i> Details
+                            </button>
+                        </h4>
+                        <div class="goal-description">
+                            All websites made live by the manager in the last month should be free from technical/functional errors when checked 8 hours after domain points to servers.
+                        </div>
+
+                        <div id="monthlyGoal2Metrics" class="goal-metrics">
+                            <!-- Metrics will be loaded here -->
+                        </div>
+
+                        <div id="monthlyGoal2Details" class="goal-details-container" style="display: none;">
+                            <!-- Project details will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Monthly Goal 3: WP Conversion Review -->
+                    <div class="form-section">
+                        <h4>3. WP Conversion Review Timeliness
+                            <span id="monthlyGoal3Status" class="goal-status goal-not-achieved">Not Achieved</span>
+                            <button class="btn btn-sm btn-secondary" onclick="toggleGoalDetails('monthlyGoal3Details')" style="margin-left: 10px;">
+                                <i class="fas fa-chevron-down"></i> Details
+                            </button>
+                        </h4>
+                        <div class="goal-description">
+                            All designs converted to WordPress sent for review in the last month should be reviewed and feedback sent within 16 working hours.
+                        </div>
+
+                        <div id="monthlyGoal3Metrics" class="goal-metrics">
+                            <!-- Metrics will be loaded here -->
+                        </div>
+
+                        <div id="monthlyGoal3Details" class="goal-details-container" style="display: none;">
+                            <!-- Project details will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Monthly Goal 4: Website Standards Check -->
+                    <div class="form-section">
+                        <h4>4. Website Standards Check
+                            <span id="monthlyGoal4Status" class="goal-status goal-not-achieved">Not Achieved</span>
+                            <button class="btn btn-sm btn-secondary" onclick="toggleGoalDetails('monthlyGoal4Details')" style="margin-left: 10px;">
+                                <i class="fas fa-chevron-down"></i> Details
+                            </button>
+                        </h4>
+                        <div class="goal-description">
+                            At least 4 websites published live before the 23rd of last month should be checked between 10th-15th working day for standards compliance.
+                        </div>
+
+                        <div id="monthlyGoal4Metrics" class="goal-metrics">
+                            <!-- Metrics will be loaded here -->
+                        </div>
+
+                        <div id="monthlyGoal4Details" class="goal-details-container" style="display: none;">
+                            <!-- Project details will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Biweekly Goals -->
+                <div class="goal-section">
+                    <div class="goal-header">
+                        <h2><i class="fas fa-calendar-week"></i> Biweekly Goals</h2>
+                        <span id="biweeklyStatus" class="goal-status goal-not-achieved">Not Achieved</span>
+                    </div>
+
+                    <div id="biweeklyPeriod" class="evaluation-period"></div>
+
+                    <!-- Biweekly Goal 1: Design Assignment -->
+                    <div class="form-section">
+                        <h4>1. Design Assignment Timeliness
+                            <span id="biweeklyGoal1Status" class="goal-status goal-not-achieved">Not Achieved</span>
+                        </h4>
+                        <div class="goal-description">
+                            Website designs approved by client should be assigned to team member within one working day.
+                        </div>
+
+                        <div id="biweeklyGoal1Metrics" class="goal-metrics">
+                            <!-- Metrics will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Biweekly Goal 2: Task Updates -->
+                    <div class="form-section">
+                        <h4>2. Task Updates Timeliness
+                            <span id="biweeklyGoal2Status" class="goal-status goal-not-achieved">Not Achieved</span>
+                        </h4>
+                        <div class="goal-description">
+                            All website tasks assigned in last 2 weeks should be updated within 2 working days with questions/clarifications.
+                        </div>
+
+                        <div id="biweeklyGoal2Metrics" class="goal-metrics">
+                            <!-- Metrics will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Biweekly Goal 3: Internal Tickets -->
+                    <div class="form-section">
+                        <h4>3. Internal Tickets Completion
+                            <span id="biweeklyGoal3Status" class="goal-status goal-not-achieved">Not Achieved</span>
+                        </h4>
+                        <div class="goal-description">
+                            95% of non-conversion internal tickets assigned in last 2 weeks should be closed or assigned back within 4 working days.
+                        </div>
+
+                        <!-- Add/Edit Internal Ticket Form -->
+                        <h5 id="ticketFormTitle">Add Internal Ticket</h5>
+                        <form id="internalTicketForm">
+                            <input type="hidden" id="ticketId">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="ticketTitle">Ticket Title *</label>
+                                    <input type="text" id="ticketTitle" required class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="ticketReceivedDate">Date Received *</label>
+                                    <input type="date" id="ticketReceivedDate" required class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label for="ticketSentBackDate">Date Sent Back</label>
+                                    <input type="date" id="ticketSentBackDate" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="ticketDescription">Description</label>
+                                <textarea id="ticketDescription" class="form-control" rows="2"></textarea>
+                            </div>
+                            <div class="form-buttons">
+                                <button type="submit" class="btn btn-primary" id="ticketSubmitBtn">
+                                    <i class="fas fa-plus"></i> Add Ticket
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="ticketCancelBtn" style="display: none;" onclick="cancelTicketEdit()">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </div>
+                        </form>
+
+                        <div id="biweeklyGoal3Metrics" class="goal-metrics">
+                            <!-- Metrics will be loaded here -->
+                        </div>
+
+                        <div id="internalTicketsList" class="tickets-container">
+                            <!-- Internal tickets will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div id="messageContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="manager-goals.js"></script>
+</body>
+</html>
