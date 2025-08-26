@@ -279,16 +279,22 @@ function setupDashboardEventListeners() {
     const designEmailSentDate = document.getElementById('designEmailSentDate');
     if (designEmailSentDate) {
         designEmailSentDate.addEventListener('change', async (e) => {
-            await saveEmailDateToGoalTracking(e.target.value, 'Design Review Email');
-            updateMonthlyGoalStatus();
+            if (e.target.value) {
+                await saveEmailDateToGoalTracking(e.target.value, 'Design Review Email');
+                updateMonthlyGoalStatus();
+                showSuccessMessage('Design Review Email date saved successfully!');
+            }
         });
     }
 
     const standardsEmailSentDate = document.getElementById('standardsEmailSentDate');
     if (standardsEmailSentDate) {
         standardsEmailSentDate.addEventListener('change', async (e) => {
-            await saveEmailDateToGoalTracking(e.target.value, 'Website Standards Check');
-            updateMonthlyGoalStatus();
+            if (e.target.value) {
+                await saveEmailDateToGoalTracking(e.target.value, 'Website Standards Check');
+                updateMonthlyGoalStatus();
+                showSuccessMessage('Website Standards Check email date saved successfully!');
+            }
         });
     }
 
@@ -876,28 +882,48 @@ async function loadEmailDatesFromGoalTracking(monthStart, monthEnd) {
     if (!supabase || !currentUser) return;
 
     try {
+        // Look for email dates within a broader range (last 60 days) to catch dates
+        // saved with different period calculations
+        const searchStart = new Date(monthStart);
+        searchStart.setDate(searchStart.getDate() - 30); // 30 days before month start
+
+        const searchEnd = new Date(monthEnd);
+        searchEnd.setDate(searchEnd.getDate() + 30); // 30 days after month end
+
         const { data: emailData, error } = await supabase
             .from('goal_tracking')
-            .select('goal_name, details')
+            .select('goal_name, details, calculated_at, period_start, period_end')
             .eq('user_id', currentUser.id)
             .eq('goal_type', 'monthly')
-            .eq('period_start', monthStart.toISOString().split('T')[0])
-            .eq('period_end', monthEnd.toISOString().split('T')[0])
-            .in('goal_name', ['Design Review Email', 'Website Standards Check']);
+            .gte('period_start', searchStart.toISOString().split('T')[0])
+            .lte('period_end', searchEnd.toISOString().split('T')[0])
+            .in('goal_name', ['Design Review Email', 'Website Standards Check'])
+            .order('calculated_at', { ascending: false }); // Get most recent first
 
         if (error) throw error;
 
-        if (emailData) {
+        if (emailData && emailData.length > 0) {
+            // Group by goal_name and take the most recent entry for each
+            const latestEmails = {};
             emailData.forEach(entry => {
-                if (entry.goal_name === 'Design Review Email' && entry.details?.email_sent_date) {
+                if (entry.details?.email_sent_date && !latestEmails[entry.goal_name]) {
+                    latestEmails[entry.goal_name] = entry;
+                }
+            });
+
+            // Set the email dates in the form
+            Object.values(latestEmails).forEach(entry => {
+                if (entry.goal_name === 'Design Review Email') {
                     const emailInput = document.getElementById('designEmailSentDate');
                     if (emailInput) {
                         emailInput.value = entry.details.email_sent_date;
+                        console.log(`Loaded Design Review Email date: ${entry.details.email_sent_date} from period ${entry.period_start} to ${entry.period_end}`);
                     }
-                } else if (entry.goal_name === 'Website Standards Check' && entry.details?.email_sent_date) {
+                } else if (entry.goal_name === 'Website Standards Check') {
                     const emailInput = document.getElementById('standardsEmailSentDate');
                     if (emailInput) {
                         emailInput.value = entry.details.email_sent_date;
+                        console.log(`Loaded Website Standards Check date: ${entry.details.email_sent_date} from period ${entry.period_start} to ${entry.period_end}`);
                     }
                 }
             });
@@ -1722,6 +1748,7 @@ function resetTicketForm() {
     document.getElementById('ticketSubmitBtn').innerHTML = '<i class="fas fa-plus"></i> Add Ticket';
     document.getElementById('ticketCancelBtn').style.display = 'none';
 }// Function to save email dates to goal tracking
+// Function to save email dates to goal tracking
 async function saveEmailDateToGoalTracking(emailDate, goalName) {
     if (!emailDate || !currentUser) return;
 
@@ -1743,36 +1770,45 @@ async function saveEmailDateToGoalTracking(emailDate, goalName) {
         },
         total_projects: 1,
         successful_projects: 1,
-        percentage: 100
+        percentage: 100,
+        calculated_at: new Date().toISOString()
     };
 
     try {
         if (supabase) {
-            // Check if entry already exists for this goal and period
+            // First, check for any existing entries for this goal and user (broader search)
+            const searchStart = new Date(monthStart);
+            searchStart.setDate(searchStart.getDate() - 30);
+            const searchEnd = new Date(evalDate);
+            searchEnd.setDate(searchEnd.getDate() + 30);
+
             const { data: existingData, error: fetchError } = await supabase
                 .from('goal_tracking')
-                .select('id')
+                .select('id, period_start, period_end')
                 .eq('user_id', currentUser.id)
                 .eq('goal_type', 'monthly')
                 .eq('goal_name', goalName)
-                .eq('period_start', goalTrackingEntry.period_start)
-                .eq('period_end', goalTrackingEntry.period_end);
+                .gte('period_start', searchStart.toISOString().split('T')[0])
+                .lte('period_end', searchEnd.toISOString().split('T')[0])
+                .order('calculated_at', { ascending: false });
 
             if (fetchError) throw fetchError;
 
             if (existingData && existingData.length > 0) {
-                // Update existing entry
+                // Update the most recent entry
                 const { error: updateError } = await supabase
                     .from('goal_tracking')
                     .update({
                         details: goalTrackingEntry.details,
                         achieved: true,
-                        calculated_at: new Date().toISOString()
+                        period_start: goalTrackingEntry.period_start,
+                        period_end: goalTrackingEntry.period_end,
+                        calculated_at: goalTrackingEntry.calculated_at
                     })
                     .eq('id', existingData[0].id);
 
                 if (updateError) throw updateError;
-                console.log(`Updated email date for ${goalName}`);
+                console.log(`Updated email date for ${goalName} - Entry ID: ${existingData[0].id}`);
             } else {
                 // Insert new entry
                 const { error: insertError } = await supabase
@@ -1780,11 +1816,13 @@ async function saveEmailDateToGoalTracking(emailDate, goalName) {
                     .insert([goalTrackingEntry]);
 
                 if (insertError) throw insertError;
-                console.log(`Saved email date for ${goalName} to goal tracking`);
+                console.log(`Saved new email date for ${goalName} to goal tracking`);
             }
         }
     } catch (error) {
         console.error('Error saving email date to goal tracking:', error);
+        // Show user-friendly error message
+        showErrorMessage(`Failed to save email date: ${error.message}`);
     }
 }
 
