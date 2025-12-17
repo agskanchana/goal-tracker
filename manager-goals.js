@@ -6,17 +6,17 @@ const SUPABASE_URL = 'https://hkdoxjjlsrgbxeqefqdz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhrZG94ampsc3JnYnhlcWVmcWR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNzE3ODEsImV4cCI6MjA2Njk0Nzc4MX0.6CsK7mJyiiXO6c8t2wwlcmp8nlo3_3xOS52PRg4c4a4';
 
 // Initialize Supabase
-let supabase;
+let supabaseClient;
 try {
     if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } else {
         console.warn('Supabase credentials not configured. Using demo mode.');
-        supabase = null;
+        supabaseClient = null;
     }
 } catch (error) {
     console.error('Failed to initialize Supabase:', error);
-    supabase = null;
+    supabaseClient = null;
 }
 
 // Global Variables
@@ -188,10 +188,10 @@ async function handleLogin(e) {
     try {
         let user = null;
 
-        if (supabase) {
+        if (supabaseClient) {
             // Try to authenticate with Supabase
             // This would be implemented when Supabase is configured
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('users')
                 .select('*')
                 .eq('email', email)
@@ -329,13 +329,13 @@ async function handleLogout() {
 
 async function loadData() {
     try {
-        if (supabase) {
+        if (supabaseClient) {
             // Load from Supabase when configured
             console.log('Loading data from Supabase...');
 
             try {
                 // Load projects from Supabase
-                const { data: projectsData, error: projectsError } = await supabase
+                const { data: projectsData, error: projectsError } = await supabaseClient
                     .from('projects')
                     .select('*')
                     .order('created_at', { ascending: false });
@@ -343,7 +343,7 @@ async function loadData() {
                 if (projectsError) throw projectsError;
 
                 // Load users from Supabase
-                const { data: usersData, error: usersError } = await supabase
+                const { data: usersData, error: usersError } = await supabaseClient
                     .from('users')
                     .select('*')
                     .order('created_at', { ascending: false });
@@ -360,7 +360,7 @@ async function loadData() {
 
                 // Load goal tracking data including features and tickets
                 try {
-                    const { data: goalTrackingData, error: goalError } = await supabase
+                    const { data: goalTrackingData, error: goalError } = await supabaseClient
                         .from('goal_tracking')
                         .select('*')
                         .eq('user_id', currentUser?.id || 1)
@@ -730,9 +730,9 @@ async function handleFeatureSubmit(e) {
     try {
         if (featureId) {
             // Edit existing feature
-            if (supabase) {
+            if (supabaseClient) {
                 try {
-                    const { error } = await supabase
+                    const { error } = await supabaseClient
                         .from('goal_tracking')
                         .update({
                             details: goalTrackingEntry.details,
@@ -783,9 +783,9 @@ async function handleFeatureSubmit(e) {
             showSuccessMessage('Feature updated successfully!');
         } else {
             // Add new feature
-            if (supabase) {
+            if (supabaseClient) {
                 try {
-                    const { data, error } = await supabase
+                    const { data, error } = await supabaseClient
                         .from('goal_tracking')
                         .insert([goalTrackingEntry])
                         .select();
@@ -879,7 +879,7 @@ async function evaluateMonthlyGoals(evaluationDate) {
 
 // Function to load email dates from goal tracking
 async function loadEmailDatesFromGoalTracking(monthStart, monthEnd) {
-    if (!supabase || !currentUser) return;
+    if (!supabaseClient || !currentUser) return;
 
     try {
         // Look for email dates within a broader range (last 60 days) to catch dates
@@ -890,7 +890,7 @@ async function loadEmailDatesFromGoalTracking(monthStart, monthEnd) {
         const searchEnd = new Date(monthEnd);
         searchEnd.setDate(searchEnd.getDate() + 30); // 30 days after month end
 
-        const { data: emailData, error } = await supabase
+        const { data: emailData, error } = await supabaseClient
             .from('goal_tracking')
             .select('goal_name, details, calculated_at, period_start, period_end')
             .eq('user_id', currentUser.id)
@@ -1467,9 +1467,9 @@ async function handleInternalTicketSubmit(e) {
     try {
         if (ticketId) {
             // Edit existing ticket
-            if (supabase) {
+            if (supabaseClient) {
                 try {
-                    const { error } = await supabase
+                    const { error } = await supabaseClient
                         .from('goal_tracking')
                         .update({
                             details: goalTrackingEntry.details,
@@ -1527,9 +1527,9 @@ async function handleInternalTicketSubmit(e) {
             showSuccessMessage('Internal ticket updated successfully!');
         } else {
             // Add new ticket
-            if (supabase) {
+            if (supabaseClient) {
                 try {
-                    const { data, error } = await supabase
+                    const { data, error } = await supabaseClient
                         .from('goal_tracking')
                         .insert([goalTrackingEntry])
                         .select();
@@ -1595,10 +1595,10 @@ async function handleInternalTicketSubmit(e) {
 async function deleteInternalTicket(ticketId) {
     if (confirm('Are you sure you want to delete this ticket?')) {
         try {
-            if (supabase) {
+            if (supabaseClient) {
                 // Delete from goal_tracking table
                 try {
-                    const { error } = await supabase
+                    const { error } = await supabaseClient
                         .from('goal_tracking')
                         .delete()
                         .eq('id', ticketId)
@@ -1658,10 +1658,10 @@ function editFeature(featureId) {
 async function deleteFeature(featureId) {
     if (confirm('Are you sure you want to delete this feature?')) {
         try {
-            if (supabase) {
+            if (supabaseClient) {
                 // Delete from goal_tracking table
                 try {
-                    const { error } = await supabase
+                    const { error } = await supabaseClient
                         .from('goal_tracking')
                         .delete()
                         .eq('id', featureId)
@@ -1775,14 +1775,14 @@ async function saveEmailDateToGoalTracking(emailDate, goalName) {
     };
 
     try {
-        if (supabase) {
+        if (supabaseClient) {
             // First, check for any existing entries for this goal and user (broader search)
             const searchStart = new Date(monthStart);
             searchStart.setDate(searchStart.getDate() - 30);
             const searchEnd = new Date(evalDate);
             searchEnd.setDate(searchEnd.getDate() + 30);
 
-            const { data: existingData, error: fetchError } = await supabase
+            const { data: existingData, error: fetchError } = await supabaseClient
                 .from('goal_tracking')
                 .select('id, period_start, period_end')
                 .eq('user_id', currentUser.id)
@@ -1796,7 +1796,7 @@ async function saveEmailDateToGoalTracking(emailDate, goalName) {
 
             if (existingData && existingData.length > 0) {
                 // Update the most recent entry
-                const { error: updateError } = await supabase
+                const { error: updateError } = await supabaseClient
                     .from('goal_tracking')
                     .update({
                         details: goalTrackingEntry.details,
@@ -1811,7 +1811,7 @@ async function saveEmailDateToGoalTracking(emailDate, goalName) {
                 console.log(`Updated email date for ${goalName} - Entry ID: ${existingData[0].id}`);
             } else {
                 // Insert new entry
-                const { error: insertError } = await supabase
+                const { error: insertError } = await supabaseClient
                     .from('goal_tracking')
                     .insert([goalTrackingEntry]);
 
