@@ -3,19 +3,19 @@ const SUPABASE_URL = 'https://hkdoxjjlsrgbxeqefqdz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhrZG94ampsc3JnYnhlcWVmcWR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNzE3ODEsImV4cCI6MjA2Njk0Nzc4MX0.6CsK7mJyiiXO6c8t2wwlcmp8nlo3_3xOS52PRg4c4a4';
 
 // Initialize Supabase (you'll need to replace with your actual credentials)
-let supabase;
+let supabaseClient;
 
 // Try to initialize Supabase, but gracefully handle if credentials are not set
 try {
     if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } else {
         console.warn('Supabase credentials not configured. Using demo mode.');
-        supabase = null;
+        supabaseClient = null;
     }
 } catch (error) {
     console.error('Failed to initialize Supabase:', error);
-    supabase = null;
+    supabaseClient = null;
 }
 
 // Global Variables
@@ -248,7 +248,7 @@ async function initializeApp() {
     await loadHolidayData();
 
     // Initialize demo data if Supabase is not configured
-    if (!supabase) {
+    if (!supabaseClient) {
         // Try to load existing data from localStorage first
         const storedProjects = localStorage.getItem('projects');
         const storedUsers = localStorage.getItem('users');
@@ -465,9 +465,9 @@ async function handleLogin(e) {
     try {
         let user;
 
-        if (supabase) {
+        if (supabaseClient) {
             // Use custom users table for authentication (not Supabase Auth)
-            const { data: userData, error: userError } = await supabase
+            const { data: userData, error: userError } = await supabaseClient
                 .from('users')
                 .select('*')
                 .eq('email', email)
@@ -603,8 +603,8 @@ async function loadProjects() {
     try {
         let allProjects = [];
 
-        if (supabase) {
-            const { data, error } = await supabase
+        if (supabaseClient) {
+            const { data, error } = await supabaseClient
                 .from('projects')
                 .select(`
                     *,
@@ -1017,16 +1017,16 @@ async function handleProjectSubmit(e) {
         console.log('Project data being saved:', projectData);
         console.log('Is editing:', isEditing);
 
-        if (supabase) {
+        if (supabaseClient) {
             if (isEditing) {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('projects')
                     .update(projectData)
                     .eq('id', currentProjectId);
 
                 if (error) throw error;
             } else {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('projects')
                     .insert([projectData])
                     .select();
@@ -1088,8 +1088,8 @@ async function deleteProject(projectId) {
     }
 
     try {
-        if (supabase) {
-            const { error } = await supabase
+        if (supabaseClient) {
+            const { error } = await supabaseClient
                 .from('projects')
                 .delete()
                 .eq('id', projectId);
@@ -1131,10 +1131,10 @@ let currentEditingTaskId = null;
 
 async function loadTasks(projectId = null) {
     try {
-        if (supabase) {
+        if (supabaseClient) {
             if (projectId) {
                 // Load tasks for specific project
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('tasks')
                     .select('*')
                     .eq('project_id', projectId)
@@ -1155,7 +1155,7 @@ async function loadTasks(projectId = null) {
                 return data;
             } else {
                 // Load all tasks into global array
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('tasks')
                     .select('*')
                     .order('created_at', { ascending: false });
@@ -1318,18 +1318,18 @@ async function handleTaskSubmit(e) {
         const title = document.getElementById('taskModalTitle').textContent;
         const isEditing = title === 'Edit Task';
 
-        if (supabase) {
+        if (supabaseClient) {
             if (isEditing) {
                 // Get task ID from form or current editing context
                 const taskId = getCurrentEditingTaskId();
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('tasks')
                     .update(taskData)
                     .eq('id', taskId);
 
                 if (error) throw error;
             } else {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('tasks')
                     .insert([taskData]);
 
@@ -1391,8 +1391,8 @@ async function deleteTask(taskId) {
     }
 
     try {
-        if (supabase) {
-            const { error } = await supabase
+        if (supabaseClient) {
+            const { error } = await supabaseClient
                 .from('tasks')
                 .delete()
                 .eq('id', taskId);
@@ -1420,8 +1420,8 @@ async function deleteTask(taskId) {
 // Users Functions
 async function loadUsers() {
     try {
-        if (supabase) {
-            const { data, error } = await supabase
+        if (supabaseClient) {
+            const { data, error } = await supabaseClient
                 .from('users')
                 .select('*')
                 .order('created_at', { ascending: false });
@@ -1538,9 +1538,9 @@ async function handleUserSubmit(e) {
     try {
         const isEditing = !!editingUserId;
 
-        if (supabase) {
+        if (supabaseClient) {
             if (isEditing) {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('users')
                     .update(userData)
                     .eq('id', editingUserId);
@@ -1548,7 +1548,7 @@ async function handleUserSubmit(e) {
                 if (error) throw error;
             } else {
                 // In real implementation, you'd hash the password and create auth user
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('users')
                     .insert([userData]);
 
@@ -1604,8 +1604,8 @@ async function deleteUser(userId) {
     }
 
     try {
-        if (supabase) {
-            const { error } = await supabase
+        if (supabaseClient) {
+            const { error } = await supabaseClient
                 .from('users')
                 .delete()
                 .eq('id', userId);
@@ -1632,8 +1632,8 @@ async function deleteUser(userId) {
 // Leaves Functions
 async function loadLeaves() {
     try {
-        if (supabase) {
-            const { data, error } = await supabase
+        if (supabaseClient) {
+            const { data, error } = await supabaseClient
                 .from('leaves')
                 .select(`
                     *,
@@ -1713,8 +1713,8 @@ async function handleLeaveSubmit(e) {
     };
 
     try {
-        if (supabase) {
-            const { data, error } = await supabase
+        if (supabaseClient) {
+            const { data, error } = await supabaseClient
                 .from('leaves')
                 .insert([leaveData]);
 
@@ -1745,8 +1745,8 @@ async function deleteLeave(leaveId) {
     }
 
     try {
-        if (supabase) {
-            const { error } = await supabase
+        if (supabaseClient) {
+            const { error } = await supabaseClient
                 .from('leaves')
                 .delete()
                 .eq('id', leaveId);
@@ -1982,7 +1982,7 @@ function showMessage(message, type) {
 
 // Database Setup Function (to be called once Supabase is configured)
 async function setupDatabase() {
-    if (!supabase) {
+    if (!supabaseClient) {
         console.log('Supabase not configured');
         return;
     }
