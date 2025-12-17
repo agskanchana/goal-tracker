@@ -6,17 +6,17 @@ const SUPABASE_URL = 'https://hkdoxjjlsrgbxeqefqdz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhrZG94ampsc3JnYnhlcWVmcWR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNzE3ODEsImV4cCI6MjA2Njk0Nzc4MX0.6CsK7mJyiiXO6c8t2wwlcmp8nlo3_3xOS52PRg4c4a4';
 
 // Initialize Supabase
-let supabase;
+let supabaseClient;
 try {
     if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY') {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } else {
         console.warn('Supabase credentials not configured. Using demo mode.');
-        supabase = null;
+        supabaseClient = null;
     }
 } catch (error) {
     console.error('Failed to initialize Supabase:', error);
-    supabase = null;
+    supabaseClient = null;
 }
 
 // Global Variables
@@ -300,9 +300,9 @@ async function handleLogin(e) {
     try {
         let user = null;
 
-        if (supabase) {
+        if (supabaseClient) {
             // Use custom users table for authentication (same as main app)
-            const { data: userData, error: userError } = await supabase
+            const { data: userData, error: userError } = await supabaseClient
                 .from('users')
                 .select('*')
                 .eq('email', email)
@@ -458,11 +458,11 @@ async function loadData() {
         // Load holiday data first
         await loadHolidayData();
 
-        if (supabase) {
+        if (supabaseClient) {
             // Load from Supabase
             const [projectsResult, usersResult] = await Promise.all([
-                supabase.from('projects').select('*'),
-                supabase.from('users').select('*')
+                supabaseClient.from('projects').select('*'),
+                supabaseClient.from('users').select('*')
             ]);
 
             if (projectsResult.error) throw projectsResult.error;
